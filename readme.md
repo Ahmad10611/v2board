@@ -10,20 +10,20 @@
 
 ## 原版迁移步骤
 
-按以下步骤进行面板文件迁移：
+برای انتقال فایل های پانل مراحل زیر را دنبال کنید：
 
     git remote set-url origin https://github.com/wyx2685/v2board  
     git checkout master  
     ./update.sh  
 
 
-按以下步骤刷新设置缓存，重启队列:
+مراحل زیر را دنبال کنید تا کش تنظیمات را تازه کنید و صف را مجددا راه اندازی کنید:
 
     php artisan config:clear
     php artisan config:cache
     php artisan horizon:terminate
 
-最后进入后台重新保存主题： 主题配置-主题设置-确定
+در نهایت وارد پس‌زمینه شده و تم را دوباره ذخیره کنید: پیکربندی تم-تنظیمات تم-OK
 
 # **V2Board**
 

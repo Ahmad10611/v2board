@@ -54,3 +54,7 @@ Route::get('/' . config('v2board.secure_path', config('v2board.frontend_admin_pa
 if (!empty(config('v2board.subscribe_path'))) {
     Route::get(config('v2board.subscribe_path'), 'V1\\Client\\ClientController@subscribe')->middleware('client');
 }
+
+// مسیر برای مدیریت بازگشت از درگاه پرداخت آقای پرداخت
+Route::post('/api/v1/guest/payment/callback/aghayehpardakht', [PaymentController::class, 'aghayehpardakhtCallback']);
+Route::post('payment/notify/{method}/{uuid}', [PaymentController::class, 'notify'])->name('payment.notify');

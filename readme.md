@@ -12,7 +12,7 @@
 
 برای انتقال فایل های پانل مراحل زیر را دنبال کنید：
 
-    git remote set-url origin https://github.com/wyx2685/v2board  
+    git remote set-url origin https://github.com/Ahmad10611/v2board  
     git checkout master  
     ./update.sh  
 

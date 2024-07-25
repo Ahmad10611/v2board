@@ -7,20 +7,28 @@ use App\Plugins\Telegram\Telegram;
 
 class UnBind extends Telegram {
     public $command = '/unbind';
-    public $description = '将Telegram账号从网站解绑';
+    public $description = 'حذف لینک اکانت تلگرام از وب‌سایت';
 
     public function handle($message, $match = []) {
         if (!$message->is_private) return;
+
         $user = User::where('telegram_id', $message->chat_id)->first();
         $telegramService = $this->telegramService;
+
         if (!$user) {
-            $telegramService->sendMessage($message->chat_id, '没有查询到您的用户信息，请先绑定账号', 'markdown');
+            $telegramService->sendMessage($message->chat_id, 'اطلاعات حساب پیدا نشد! ابتدا حساب خود را اضافه کنید 😊', 'markdown');
             return;
         }
+
         $user->telegram_id = NULL;
-        if (!$user->save()) {
-            abort(500, '解绑失败');
+
+        try {
+            if (!$user->save()) {
+                throw new \Exception('بازگشایی نشد');
+            }
+            $telegramService->sendMessage($message->chat_id, 'از حساب خود خارج شدید 🥲', 'markdown');
+        } catch (\Exception $e) {
+            $telegramService->sendMessage($message->chat_id, 'مشکلی در بازگشایی حساب شما رخ داد. لطفاً دوباره تلاش کنید.', 'markdown');
         }
-        $telegramService->sendMessage($message->chat_id, '解绑成功', 'markdown');
     }
 }

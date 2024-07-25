@@ -2,6 +2,8 @@
 
 use App\Services\ThemeService;
 use Illuminate\Http\Request;
+use App\Http\Controllers\V1\Guest\PaymentController;
+
 
 /*
 |--------------------------------------------------------------------------

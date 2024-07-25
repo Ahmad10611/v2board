@@ -73,7 +73,7 @@ class Singbox
     protected function addProxies($proxies)
     {
         foreach ($this->config['outbounds'] as &$outbound) {
-            if (($outbound['type'] === 'selector' && $outbound['tag'] === '节点选择') || ($outbound['type'] === 'urltest' && $outbound['tag'] === '自动选择')) {
+            if (($outbound['type'] === 'selector' && $outbound['tag'] === '💉دکتر‌موبایل‌جایزان') || ($outbound['type'] === 'urltest' && $outbound['tag'] === '📌خودکار')) {
                 array_push($outbound['outbounds'], ...array_column($proxies, 'tag'));
             }
         }

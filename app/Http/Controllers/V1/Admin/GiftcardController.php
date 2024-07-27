@@ -88,15 +88,15 @@ class GiftcardController extends Controller
         foreach ($giftcards as $giftcard) {
             $type = ['', '金额', '时长', '流量'][$giftcard['type']];
             $value = ['', round($giftcard['value']/100, 2), $giftcard['value'] . '天', $giftcard['value'] . 'GB'][$giftcard['type']];
-            $startTime = date('Y-m-d H:i:s', strtotime($giftcard['started_at']));
-            $endTime = date('Y-m-d H:i:s', strtotime($giftcard['ended_at']));
+            $startTime = date('Y-m-d H:i:s', $giftcard['started_at']);
+            $endTime = date('Y-m-d H:i:s', $giftcard['ended_at']);
             $limitUse = $giftcard['limit_use'] ?? '不限制';
-            $createTime = date('Y-m-d H:i:s', strtotime($giftcard['created_at']));
+            $createTime = date('Y-m-d H:i:s', $giftcard['created_at']);
             $data .= "{$giftcard['name']},{$type},{$value},{$startTime},{$endTime},{$limitUse},{$giftcard['code']},{$createTime}\r\n";
         }
 
         // Return the CSV data as a response
-        return response($data)->header('Content-Type', 'text/csv');
+       echo($data);
     }
 
     public function drop(Request $request)

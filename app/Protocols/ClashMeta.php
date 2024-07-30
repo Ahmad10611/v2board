@@ -4,7 +4,6 @@ namespace App\Protocols;
 
 use App\Utils\Helper;
 use Symfony\Component\Yaml\Yaml;
-use React\Promise\Promise;
 
 class ClashMeta
 {
@@ -32,7 +31,7 @@ class ClashMeta
         $appName = config('v2board.app_name', 'V2Board');
         header("subscription-userinfo: upload={$this->user['u']}; download={$this->user['d']}; total={$this->user['transfer_enable']}; expire={$this->user['expired_at']}");
         header('profile-update-interval: 24');
-        header("content-disposition:attachment;filename*=UTF-8''" . rawurlencode($appName));
+        header("content-disposition:attachment;filename*=UTF-8''".rawurlencode($appName));
 
         $proxies = array_map([$this, 'buildProxy'], $this->servers);
         $proxyNames = array_column($proxies, 'name');
@@ -44,39 +43,6 @@ class ClashMeta
         $yaml = Yaml::dump($this->config, 2, 4, Yaml::DUMP_EMPTY_ARRAY_AS_SEQUENCE);
         $yaml = str_replace('$app_name', $appName, $yaml);
         return $yaml;
-    }
-
-    private function updateProxyGroups($proxies)
-    {
-        foreach ($this->config['proxy-groups'] as &$group) {
-            $group['proxies'] = $this->updateGroupProxies($group['proxies'], $proxies);
-        }
-        $this->config['proxy-groups'] = array_values(array_filter($this->config['proxy-groups'], fn($group) => $group['proxies']));
-    }
-
-    private function updateGroupProxies($groupProxies, $proxies)
-    {
-        $updatedProxies = [];
-        foreach ($groupProxies as $src) {
-            if ($this->isRegex($src)) {
-                foreach ($proxies as $dst) {
-                    if ($this->isMatch($src, $dst)) {
-                        $updatedProxies[] = $dst;
-                    }
-                }
-            } else {
-                $updatedProxies[] = $src;
-            }
-        }
-        return array_merge($updatedProxies, $proxies);
-    }
-
-    private function addSubscriptionDomainRule()
-    {
-        $subsDomain = $_SERVER['HTTP_HOST'] ?? null;
-        if ($subsDomain) {
-            array_unshift($this->config['rules'], "DOMAIN,{$subsDomain},DIRECT");
-        }
     }
 
     private function buildProxy($server)
@@ -250,6 +216,39 @@ class ClashMeta
             $opts['path'] = $settings['path'] ?? '';
         }
         return $opts;
+    }
+
+    private function updateProxyGroups($proxies)
+    {
+        foreach ($this->config['proxy-groups'] as &$group) {
+            $group['proxies'] = $this->updateGroupProxies($group['proxies'], $proxies);
+        }
+        $this->config['proxy-groups'] = array_values(array_filter($this->config['proxy-groups'], fn($group) => $group['proxies']));
+    }
+
+    private function updateGroupProxies($groupProxies, $proxies)
+    {
+        $updatedProxies = [];
+        foreach ($groupProxies as $src) {
+            if ($this->isRegex($src)) {
+                foreach ($proxies as $dst) {
+                    if ($this->isMatch($src, $dst)) {
+                        $updatedProxies[] = $dst;
+                    }
+                }
+            } else {
+                $updatedProxies[] = $src;
+            }
+        }
+        return array_merge($updatedProxies, $proxies);
+    }
+
+    private function addSubscriptionDomainRule()
+    {
+        $subsDomain = $_SERVER['HTTP_HOST'] ?? null;
+        if ($subsDomain) {
+            array_unshift($this->config['rules'], "DOMAIN,{$subsDomain},DIRECT");
+        }
     }
 
     private function isMatch($exp, $str)

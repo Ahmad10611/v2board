@@ -210,21 +210,21 @@
 </head>
 <body>
     <div class="toggle-dark-mode">
-        <i class="fas fa-moon"></i>
+        <i class="fas fa-moon" aria-label="Toggle Dark Mode"></i>
     </div>
-    <div class="payment-result">
-        <div class="icon">✔</div>
+    <div class="payment-result" role="alert">
+        <div class="icon" aria-hidden="true">✔</div>
         <h1>پرداخت موفق</h1>
         <p>پرداخت با موفقیت انجام شد.</p>
         <div class="order-info">
             {!! $orderInfo !!}
         </div>
-        <div class="progress-bar">
+        <div class="progress-bar" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
             <div class="progress"></div>
         </div>
-        <a href="https://drmobilejayzan.info/#/dashboard" class="button">رفتن به داشبرد</a>
+        <a href="https://drmobilejayzan.info/#/dashboard" class="button" role="button">رفتن به داشبرد</a>
         <div class="countdown-wrapper">
-            <div class="countdown" id="countdown">10</div>
+            <div class="countdown" id="countdown" aria-live="polite">10</div>
             <p>ثانیه دیگر به صورت خودکار به صفحه هدایت می‌شوید</p>
         </div>
     </div>

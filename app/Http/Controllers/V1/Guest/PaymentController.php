@@ -86,10 +86,6 @@ class PaymentController extends Controller
 
     private function renderPaymentResult($success, $message, $tradeNo = null)
     {
-        $color = $success ? '#4CAF50' : '#F44336';
-        $title = $success ? 'پرداخت موفق' : 'خطا در پرداخت';
-        $icon = $success ? '✔' : '✘';
-
         $orderInfo = '';
         if ($success && $tradeNo) {
             $order = Cache::remember("order_{$tradeNo}", 60, function() use ($tradeNo) {
@@ -103,10 +99,11 @@ class PaymentController extends Controller
             }
         }
 
-        $buttonText = $success ? 'رفتن به داشبرد' : 'رفتن به سفارشات';
-        $buttonLink = $success ? 'https://drmobilejayzan.info/#/dashboard' : 'https://drmobilejayzan.info/#/dashboard/order';
-
-        return view('payment_result', compact('title', 'color', 'icon', 'message', 'orderInfo', 'buttonText', 'buttonLink'));
+        if ($success) {
+            return view('success', compact('orderInfo'));
+        } else {
+            return view('failure', compact('message'));
+        }
     }
 
     private function logInfo($message, $data = [])

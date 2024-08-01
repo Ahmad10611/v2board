@@ -233,7 +233,7 @@
         <div class="progress-bar" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
             <div class="progress"></div>
         </div>
-        <div class="progress-percentage" id="progress-percentage">در حال بارگذاری: ۰٪</div>
+        <div class="progress-percentage" id="progress-percentage">در حال فعالسازی: ۰٪</div>
         <a href="https://drmobilejayzan.info/#/dashboard" class="button" role="button">رفتن به داشبرد</a>
         <div class="countdown-wrapper">
             <div class="countdown" id="countdown" aria-live="polite">10</div>
@@ -268,7 +268,7 @@
         let progressValue = 0;
         const updateProgressInterval = setInterval(() => {
             progressValue += 1; // افزایش 1 درصد در هر 0.1 ثانیه
-            progressPercentage.textContent = `در حال بارگذاری: ${progressValue}%`;
+            progressPercentage.textContent = `در حال فعالسازی: ${progressValue}%`;
             progressBar.style.width = `${progressValue}%`;
             if (progressValue === 100) {
                 clearInterval(updateProgressInterval);

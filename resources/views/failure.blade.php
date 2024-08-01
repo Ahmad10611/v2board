@@ -231,7 +231,7 @@
         <div class="progress-bar" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
             <div class="progress"></div>
         </div>
-        <div class="progress-percentage" id="progress-percentage">در حال بارگذاری: ۰٪</div>
+        <div class="progress-percentage" id="progress-percentage">در حال برگشت به سایت: ۰٪</div>
         <div class="countdown-wrapper">
             <div class="countdown" id="countdown" aria-live="polite">10</div>
             <p>ثانیه دیگر به صورت خودکار به صفحه هدایت می‌شوید</p>
@@ -265,7 +265,7 @@
         let progressValue = 0;
         const updateProgressInterval = setInterval(() => {
             progressValue += 1; // افزایش 1 درصد در هر 0.1 ثانیه
-            progressPercentage.textContent = `در حال بارگذاری: ${progressValue}%`;
+            progressPercentage.textContent = `در حال برگشت به سایت: ${progressValue}%`;
             progressBar.style.width = `${progressValue}%`;
             if (progressValue === 100) {
                 clearInterval(updateProgressInterval);

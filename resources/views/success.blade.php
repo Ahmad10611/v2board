@@ -115,9 +115,20 @@
         .progress {
             height: 20px;
             background-color: #4CAF50;
-            width: 100%;
+            width: 0; /* شروع از 0 درصد */
             transform-origin: right;
-            animation: progress-animation 10s linear forwards;
+            transition: width 0.1s ease; /* اضافه کردن transition */
+        }
+
+        .progress-percentage {
+            margin-top: 10px;
+            font-size: 16px;
+            color: #333;
+            animation: fadeInUp 0.5s ease-in-out;
+        }
+
+        .dark-mode .progress-percentage {
+            color: #f0f0f0;
         }
 
         .countdown-wrapper {
@@ -222,6 +233,7 @@
         <div class="progress-bar" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
             <div class="progress"></div>
         </div>
+        <div class="progress-percentage" id="progress-percentage">در حال بارگذاری: ۰٪</div>
         <a href="https://drmobilejayzan.info/#/dashboard" class="button" role="button">رفتن به داشبرد</a>
         <div class="countdown-wrapper">
             <div class="countdown" id="countdown" aria-live="polite">10</div>
@@ -249,6 +261,19 @@
                 window.location.href = "https://drmobilejayzan.info/#/dashboard";
             }
         }, 1000);
+
+        // به‌روزرسانی درصد پیشرفت
+        const progressPercentage = document.getElementById('progress-percentage');
+        const progressBar = document.querySelector('.progress');
+        let progressValue = 0;
+        const updateProgressInterval = setInterval(() => {
+            progressValue += 1; // افزایش 1 درصد در هر 0.1 ثانیه
+            progressPercentage.textContent = `در حال بارگذاری: ${progressValue}%`;
+            progressBar.style.width = `${progressValue}%`;
+            if (progressValue === 100) {
+                clearInterval(updateProgressInterval);
+            }
+        }, 100); // به‌روزرسانی هر 100 میلی‌ثانیه
     </script>
 </body>
 </html>

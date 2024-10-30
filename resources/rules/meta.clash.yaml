@@ -1,0 +1,225 @@
+port: 7382
+socks-port: 8828
+mixed-port: 9889
+redir-port: 9797
+tproxy-port: 9898
+mode: rule
+allow-lan: true
+bind-address: '*'
+log-level: silent
+ipv6: false
+external-controller: 0.0.0.0:54344
+#secret: "gsdgsgsgsd"
+#external-ui: /data/adb/box/clash/dashboard
+tcp-concurrent: true
+find-process-mode: always
+
+profile:
+  store-selected: true
+  # 储存 API 对策略组的选择，以供下次启动时使用
+  store-fake-ip: false
+  # 储存 fakeip 映射表，域名再次发生连接时，使用原有映射地址
+
+sniffer:                           #【Meta专属】sniffer域名嗅探器
+enable: true                    # 嗅探器开关
+
+                                   # # 开启后对 redir-host 类型识别的流量进行强制嗅探
+                                   # # 包含 Tun、Redir 和 TProxy 或 DNS 为 redir-host
+  # # force-dns-mapping: false
+  # # parse-pure-ip: false           # 对所有未获取到域名的流量进行强制嗅探
+
+  # override-destination: false      # 是否使用嗅探结果作为实际访问,默认 true
+                                   # # 全局配置,优先级低于 sniffer.sniff 实际配置
+  # sniff: # TLS 默认如果不配置 ports 默认嗅探 443
+    # TLS:
+      # ports: [443, 8443]
+    # HTTP: # 需要嗅探的端口, 默认嗅探 80
+      # ports: [80, 8080-8880]
+      # override-destination: true # 可覆盖 sniffer.override-destination
+  # force-domain:
+    # - +.v2ex.com
+  # # 白名单,跳过嗅探结果
+  # skip-domain:
+    # - Mijia Cloud
+
+tun:
+  enable: true
+  device: utun
+  mtu: 1400
+  stack: gvisor
+  dns-hijack:
+    - any:53
+    - tcp://any:53
+  auto-route: true
+  auto-detect-interface: true
+
+dns:
+  enable: true
+  prefer-h3: true
+  default-nameserver: [8.8.8.8, 1.1.1.1]
+  enhanced-mode: fake-ip
+  nameserver:
+    - 8.8.8.8
+    - 1.1.1.1
+  fake-ip-filter:
+    - "*.lan"
+proxies:
+
+proxy-groups:
+  - { name: "💉دکتر‌موبایل‌جایزان", type: select, proxies: ["🚀 خودکار 🚀", "🚀 اولین سرور فعال 🚀", "load-balance"] }
+  - { name: "🚀 خودکار 🚀", type: url-test, proxies: [], url: "http://www.gstatic.com/generate_204", interval: 1200 }
+  - { name: "🚀 اولین سرور فعال 🚀", type: fallback, proxies: [], url: "http://www.gstatic.com/generate_204", interval: 1200 }
+  - name: "load-balance"
+    type: load-balance
+    strategy: consistent-hashing
+    proxies: []
+    url: "http://www.gstatic.com/generate_204"
+    interval: 6400
+    lazy: true
+    health-check:
+      enable: true
+      timeout: 1 # زمان انتظار برای پاسخ به ثانیه
+      retries: 2 # بدون تلاش مجدد برای بررسی وضعیت
+      fail-time: 1 # تعداد دفعات ناموفقیت برای حذف سرور
+rules:
+  # دستی
+  - DOMAIN-KEYWORD,digikala,DIRECT
+  - DOMAIN-KEYWORD,inmobile.ir,DIRECT
+  - DOMAIN-KEYWORD,www.hostbuf.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN,www.hostbuf.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-KEYWORD,finalshell,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-KEYWORD,dzkj16888,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-KEYWORD,dzkj,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-KEYWORD,d.ns.instagram.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-KEYWORD,yahoo,💉دکتر‌موبایل‌جایزان  
+  - IP-CIDR,176.9.178.49/32,💉دکتر‌موبایل‌جایزان
+  - DOMAIN,chat.openai.com,💉دکتر‌موبایل‌جایزان  
+  - DOMAIN-KEYWORD,pq.hosting,💉دکتر‌موبایل‌جایزان  
+  - DOMAIN-KEYWORD,github.com,💉دکتر‌موبایل‌جایزان  
+  - DOMAIN-KEYWORD,avapedia.com,DIRECT
+  - DOMAIN,avapedia.com,DIRECT
+  - DOMAIN-KEYWORD,githubusercontent,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-KEYWORD,github,💉دکتر‌موبایل‌جایزان
+
+  # اپلیکیشن‌های داخلی
+  - DOMAIN-SUFFIX,ir,DIRECT
+  - DOMAIN-SUFFIX,irancell,DIRECT
+  - DOMAIN-SUFFIX,shatel,DIRECT
+  - DOMAIN-SUFFIX,mtnirancell,DIRECT
+  - DOMAIN-SUFFIX,tdlte.ir,DIRECT
+  - DOMAIN-SUFFIX,rightel.ir,DIRECT
+  - DOMAIN-SUFFIX,shatel.ir,DIRECT
+  - DOMAIN-SUFFIX,respina.net,DIRECT
+  - DOMAIN-SUFFIX,parsonline.net,DIRECT
+  - DOMAIN-SUFFIX,asiatech.ir,DIRECT
+  - DOMAIN-SUFFIX,hiweb.ir,DIRECT
+
+  # دامنه‌های مسدود
+  - DOMAIN-KEYWORD,ads,REJECT
+  - DOMAIN-KEYWORD,adservice,REJECT
+  - DOMAIN-KEYWORD,malware,REJECT
+  - DOMAIN-KEYWORD,phishing,REJECT
+  - DOMAIN-KEYWORD,cryptominers,REJECT
+
+  # سرویس‌های خاص
+  - DOMAIN,www.speedtest.net,DIRECT
+  - DOMAIN-KEYWORD,speedtest,DIRECT
+
+  # سرویس‌های خارجی
+  - DOMAIN-KEYWORD,amazon,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-KEYWORD,google,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-KEYWORD,gmail,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-KEYWORD,youtube,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-KEYWORD,facebook,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,fb.me,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,fbcdn.net,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-KEYWORD,twitter,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-KEYWORD,instagram,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-KEYWORD,info.sunista,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-KEYWORD,sunista,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-KEYWORD,dropbox,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,twimg.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-KEYWORD,blogspot,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,youtu.be,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-KEYWORD,whatsapp,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-KEYWORD,gbwhatsapp,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-KEYWORD,yowhatsapp,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-KEYWORD,fmwhatsapp,💉دکتر‌موبایل‌جایزان
+
+  # پروسس‌ها
+  - PROCESS-NAME,my.irancell,DIRECT
+  - PROCESS-NAME,irancell,DIRECT
+
+  # شبکه محلی
+  - DOMAIN-SUFFIX,local,DIRECT
+  - IP-CIDR,127.0.0.1/32,DIRECT
+  - IP-CIDR,0.0.0.0/32,DIRECT
+  - IP-CIDR,172.16.0.0/12,DIRECT
+  - IP-CIDR,192.168.0.0/16,DIRECT
+  - RULE-SET,apps,DIRECT
+  - RULE-SET,ads,REJECT
+  - RULE-SET,malware,REJECT
+  - RULE-SET,phishing,REJECT
+  - RULE-SET,cryptominers,REJECT
+  - RULE-SET,ir,DIRECT
+  - RULE-SET,ircidr,DIRECT
+  - RULE-SET,irasn,DIRECT
+  - MATCH,💉دکتر‌موبایل‌جایزان
+
+rule-providers:
+  ir:
+    type: http
+    format: yaml
+    behavior: domain
+    url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/ir.yaml"
+    path: ./ruleset/ir.yaml
+    interval: 86400
+  ads:
+    type: http
+    format: yaml
+    behavior: domain
+    url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/ads.yaml"
+    path: ./ruleset/ads.yaml
+    interval: 86400
+  malware:
+    type: http
+    format: yaml
+    behavior: domain
+    url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/malware.yaml"
+    path: ./ruleset/malware.yaml
+    interval: 86400
+  phishing:
+    type: http
+    format: yaml
+    behavior: domain
+    url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/phishing.yaml"
+    path: ./ruleset/phishing.yaml
+    interval: 86400
+  cryptominers:
+    type: http
+    format: yaml
+    behavior: domain
+    url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/cryptominers.yaml"
+    path: ./ruleset/cryptominers.yaml
+    interval: 86400
+  apps:
+    type: http
+    format: yaml
+    behavior: classical
+    url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/apps.yaml"
+    path: ./ruleset/apps.yaml
+    interval: 86400
+  ircidr:
+    type: http
+    format: yaml
+    behavior: ipcidr
+    url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/ircidr.yaml"
+    path: ./ruleset/ircidr.yaml
+    interval: 86400
+  irasn:
+    type: http
+    format: yaml
+    behavior: classical
+    url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/irasn.yaml"
+    path: ./ruleset/irasn.yaml
+    interval: 86400

@@ -16,20 +16,15 @@ class UAfilter
      */
     public function handle(Request $request, Closure $next)
     {
-        if ($request->isMethod('post') && $request->header('Content-Type') === 'application/json') {
-            $content = $request->getContent() ?: json_encode($_POST);
-            if (preg_match('/\w+:/', $content) && !preg_match('/"\w+":/', $content)) {
-                $content = preg_replace('/(\w+):/', '"$1":', $content);
-                $data = json_decode($content, true);
-
+        if (defined('isWEBMAN') && isWEBMAN) {
+            if(str_contains($request->header('Content-Type'), 'application/json')) {
+                $phpInput = json_encode($_POST);
+                $decodedData = json_decode($phpInput, true);
                 if (json_last_error() === JSON_ERROR_NONE) {
-                    $request->replace($data);
-                } else {
-                    return response()->json(['error' => 'Invalid data'], 400);
+                    $request->merge($decodedData);
                 }
             }
         }
-        
         if (strpos($request->header('User-Agent'), 'MicroMessenger') !== false || strpos($request->header('User-Agent'), 'QQ/') !== false) {
             $html = <<<HTML
 <!DOCTYPE html>

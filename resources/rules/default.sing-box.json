@@ -6,7 +6,7 @@
                     "any"
                 ],
                 "server": "local"
-            }, 
+            },
             {
                 "clash_mode": "جهانی",
                 "server": "remote"
@@ -135,6 +135,12 @@
                 "outbound": "دکتر‌موبایل‌جایزان"
             },
             {
+                "domain": [
+                    "ddr.drmobilejayzan.info"
+                ],
+                "outbound": "direct"
+            },
+            {
                 "rule_set": [
                     "geosite-ir",
                     "geoip-ir"
@@ -158,21 +164,21 @@
                 "type": "remote",
                 "format": "binary",
                 "url": "https://raw.githubusercontent.com/Chocolate4U/Iran-sing-box-rules/rule-set/geosite-ir.srs",
-                "download_detour": "دکتر‌موبایل‌جایزان"
+                "download_detour": "direct"
             },
             {
                 "tag": "category-ads-all",
                 "type": "remote",
                 "format": "binary",
                 "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-category-ads-all.srs",
-                "download_detour": "دکتر‌موبایل‌جایزان"
+                "download_detour": "direct"
             },
             {
                 "tag": "geoip-ir",
                 "type": "remote",
                 "format": "binary",
                 "url": "https://raw.githubusercontent.com/Chocolate4U/Iran-sing-box-rules/rule-set/geoip-ir.srs",
-                "download_detour": "دکتر‌موبایل‌جایزان"
+                "download_detour": "direct"
             }
         ]
     }

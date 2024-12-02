@@ -244,13 +244,9 @@ class Helper
             "headerType" => "none",
             "quicSecurity" => "none",
             "serviceName" => "",
-            "mode" => "gun",
             "security" => $server['tls'] != 0 ? ($server['tls'] == 2 ? "reality" : "tls") : "",
             "flow" => $server['flow'],
             "fp" => $server['tls_settings']['fingerprint'] ?? 'chrome',
-            "sni" => "",
-            "pbk" => "",
-            "sid" => "",
         ];
 
         if ($server['tls']) {

@@ -25,7 +25,7 @@ class ClashNyanpasu
         header("subscription-userinfo: upload={$user['u']}; download={$user['d']}; total={$user['transfer_enable']}; expire={$user['expired_at']}");
         header('profile-update-interval: 24');
         header("content-disposition:attachment;filename*=UTF-8''".rawurlencode($appName));
-        $defaultConfig = base_path() . '/resources/rules/default.clash.yaml';
+        $defaultConfig = base_path() . '/resources/rules/meta.clash.yaml';
         $customConfig = base_path() . '/resources/rules/custom.clash.yaml';
         if (\File::exists($customConfig)) {
             $config = Yaml::parseFile($customConfig);
@@ -220,15 +220,6 @@ class ClashNyanpasu
                 $grpcSettings = $server['network_settings'];
                 $array['grpc-opts'] = [];
                 if (isset($grpcSettings['serviceName'])) $array['grpc-opts']['grpc-service-name'] = $grpcSettings['serviceName'];
-            }
-        }
-        if ($server['network'] === 'h2') {
-            $array['network'] = 'h2';
-            if ($server['network_settings']) {
-                $h2Settings = $server['network_settings'];
-                $array['h2-opts'] = [];
-                if (isset($h2Settings['host'])) $array['h2-opts']['host'] = array($h2Settings['host']);
-                if (isset($h2Settings['path'])) $array['h2-opts']['path'] = $h2Settings['path'];
             }
         }
 

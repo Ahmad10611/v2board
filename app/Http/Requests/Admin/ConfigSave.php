@@ -110,6 +110,9 @@ class ConfigSave extends FormRequest
         $rules['deposit_bounus'][] = function ($attribute, $value, $fail) {
             foreach ($value as $tier) {
                 if (!preg_match('/^\d+(\.\d+)?:\d+(\.\d+)?$/', $tier)) {
+                    if($tier == '') {
+                        continue;
+                    }
                     $fail('充值奖励格式不正确，必须为充值金额:奖励金额');
                 }
             }

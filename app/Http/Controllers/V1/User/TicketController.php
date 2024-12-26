@@ -32,9 +32,9 @@ class TicketController extends Controller
             $ticket['message'] = TicketMessage::where('ticket_id', $ticket->id)->get();
             for ($i = 0; $i < count($ticket['message']); $i++) {
                 if ($ticket['message'][$i]['user_id'] !== $ticket->user_id) {
-                    $ticket['message'][$i]['is_me'] = true;
-                } else {
                     $ticket['message'][$i]['is_me'] = false;
+                } else {
+                    $ticket['message'][$i]['is_me'] = true;
                 }
             }
 							 
@@ -58,7 +58,7 @@ class TicketController extends Controller
             }
 
             // 获取工单状态
-            $ticketStatus = config('v2board.ticket.ticket_status', 0);
+            $ticketStatus = config('v2board.ticket_status', 0);
 
             switch ($ticketStatus) {
                 case 0:
@@ -66,8 +66,7 @@ class TicketController extends Controller
                     break;
                 case 1:
                     // 仅限有付费订单用户
-                    $hasOrder = DB::table('orders')
-                        ->where('user_id', $request->user['id'])
+                    $hasOrder = Order::where('user_id', $request->user['id'])
                         ->whereIn('status', [3, 4])
                         ->exists();
                 
@@ -94,7 +93,7 @@ class TicketController extends Controller
             ]);
 
             DB::commit();
-            $this->sendNotify($ticket, $request->input('message'));
+            $this->sendNotify($ticket, $request->input('message'),$request->user['id']);
             return response([
                 'data' => true
             ]);

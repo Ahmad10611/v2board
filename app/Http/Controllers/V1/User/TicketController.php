@@ -32,7 +32,7 @@ class TicketController extends Controller
             $ticket['message'] = TicketMessage::where('ticket_id', $ticket->id)->get();
             for ($i = 0; $i < count($ticket['message']); $i++) {
                 if ($ticket['message'][$i]['user_id'] !== $ticket->user_id) {
-                    $ticket['message'][$i]['is_me'] = false;
+                    $ticket['message'][$i]['is_me'] = fasle;
                 } else {
                     $ticket['message'][$i]['is_me'] = true;
                 }
@@ -66,7 +66,8 @@ class TicketController extends Controller
                     break;
                 case 1:
                     // 仅限有付费订单用户
-                    $hasOrder = Order::where('user_id', $request->user['id'])
+                    $hasOrder = DB::table('orders')
+                        ->where('user_id', $request->user['id'])
                         ->whereIn('status', [3, 4])
                         ->exists();
                 
@@ -93,7 +94,7 @@ class TicketController extends Controller
             ]);
 
             DB::commit();
-            $this->sendNotify($ticket, $request->input('message'),$request->user['id']);
+            $this->sendNotify($ticket, $request->input('message'));
             return response([
                 'data' => true
             ]);

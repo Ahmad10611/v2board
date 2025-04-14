@@ -3,7 +3,7 @@ namespace App\Protocols\Singbox;
 
 use App\Utils\Helper;
 
-class SingboxOld
+class Singbox
 {
     public $flag = 'sing';
     private $servers;
@@ -35,7 +35,7 @@ class SingboxOld
 
     protected function loadConfig()
     {
-        $defaultConfig = base_path('resources/rules/default.sing-box.old.json');
+        $defaultConfig = base_path('resources/rules/default.sing-box.json');
         $customConfig = base_path('resources/rules/custom.sing-box.json');
         $jsonData = file_exists($customConfig) ? file_get_contents($customConfig) : file_get_contents($defaultConfig);
 
@@ -99,6 +99,7 @@ class SingboxOld
         $array['server_port'] = $server['port'];
         $array['method'] = $server['cipher'];
         $array['password'] = $password;
+        $array['domain_resolver'] = 'local';
 
         return $array;
     }
@@ -115,6 +116,7 @@ class SingboxOld
         $array['security'] = 'auto';
         $array['alter_id'] = 0;
         $array['transport']= [];
+        $array['domain_resolver'] = 'local';
 
         if ($server['tls']) {
             $tlsConfig = [];
@@ -140,6 +142,9 @@ class SingboxOld
                 if (isset($wsSettings['headers']['Host']) && !empty($wsSettings['headers']['Host'])) $array['transport']['headers'] = ['Host' => array($wsSettings['headers']['Host'])];
                 $array['transport']['max_early_data'] = 2048;
                 $array['transport']['early_data_header_name'] = 'Sec-WebSocket-Protocol';
+                if (isset($wsSettings['security'])) {
+                    $array['security'] = $wsSettings['security'];
+                }
             }
         }
         if ($server['network'] === 'grpc') {
@@ -161,6 +166,7 @@ class SingboxOld
             "server" => $server['host'],
             "server_port" => $server['port'],
             "uuid" => $password,
+            "domain_resolver" => "local",
             "packet_encoding" => "xudp"
         ];
 
@@ -225,6 +231,7 @@ class SingboxOld
         $array['server'] = $server['host'];
         $array['server_port'] = $server['port'];
         $array['password'] = $password;
+        $array['domain_resolver'] = 'local';
 
         $array['tls'] = [
             'enabled' => true,
@@ -256,18 +263,25 @@ class SingboxOld
 
     protected function buildHysteria($password, $server, $user)
     {
-        $parts = explode(",",$server['port']);
-        $firstPart = $parts[0];
-        if (strpos($firstPart, '-') !== false) {
-            $range = explode('-', $firstPart);
-            $firstPort = $range[0];
+        $parts = array_map('trim', explode(',', $server['port']));
+        $portConfig = [];
+        
+        // 检查是否为单端口
+        if (count($parts) === 1 && !str_contains($parts[0], '-')) {
+            $port = (int)$parts[0];
         } else {
-            $firstPort = $firstPart;
+            // 处理多端口情况 舍弃单独的端口 只保留范围端口
+            foreach ($parts as $part) {
+                if (str_contains($part, '-')) {
+                    $portConfig[] = str_replace('-', ':', $part);
+                }
+            }
         }
 
         $array = [
+            'tag' => $server['name'],
             'server' => $server['host'],
-            'server_port' => (int)$firstPort,
+            'domain_resolver' => 'local',
             'tls' => [
                 'enabled' => true,
                 'insecure' => $server['insecure'] ? true : false,
@@ -275,9 +289,15 @@ class SingboxOld
             ]
         ];
 
+        // 设置端口配置
+        if (isset($port)) {
+            $array['server_port'] = $port;
+        } else {
+            $array['server_ports'] = $portConfig;
+        }
+
         if (is_null($server['version']) || $server['version'] == 1) {
             $array['auth_str'] = $password;
-            $array['tag'] = $server['name'];
             $array['type'] = 'hysteria';
             $array['up_mbps'] = $user->speed_limit ? min($server['down_mbps'], $user->speed_limit) : $server['down_mbps'];
             $array['down_mbps'] = $user->speed_limit ? min($server['up_mbps'], $user->speed_limit) : $server['up_mbps'];
@@ -289,7 +309,6 @@ class SingboxOld
 
         } elseif ($server['version'] == 2) {
             $array['password'] = $password;
-            $array['tag'] = $server['name'];
             $array['type'] = 'hysteria2';
             $array['password'] = $password;
 

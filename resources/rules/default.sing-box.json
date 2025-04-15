@@ -1,187 +1,165 @@
 {
     "dns": {
+        "servers": [
+            {
+                "type": "local",
+                "tag": "local"
+            },
+            {
+                "type": "udp",
+                "tag": "remote",
+                "server": "1.1.1.1"
+            },
+            {
+                "type": "udp",
+                "tag": "cn",
+                "server": "8.8.8.8"
+            }
+        ],
         "rules": [
-            {
-                "outbound": [
-                    "any"
-                ],
-                "server": "local"
-            },
-            {
-                "clash_mode": "جهانی",
-                "server": "remote"
-            },
-            {
-                "clash_mode": "مستقیم",
-                "server": "local"
-            },
             {
                 "rule_set": [
                     "geosite-ir"
                 ],
-                "server": "local"
-            },
-            {
-                "rule_set": [
-                    "category-ads-all"
-                ],
-                "server": "block"
+                "action": "route",
+                "server": "cn"
             }
         ],
-        "servers": [
-            {
-                "address": "1.1.1.1",
-                "detour": "دکتر‌موبایل‌جایزان",
-                "tag": "remote"
-            },
-            {
-                "address": "8.8.8.8",
-                "detour": "direct",
-                "tag": "local"
-            },
-            {
-                "address": "rcode://refused",
-                "tag": "block"
-            }
-        ],
-        "final": "remote",
-        "strategy": "ipv4_only",
-        "disable_cache": false
-    },
-    "experimental": {
-        "cache_file": {
-            "enabled": true
-        },
-        "clash_api": {
-            "default_mode": "قوانین",
-            "external_controller": "127.0.0.1:9090",
-            "secret": ""
-        }
+        "final": "remote"
     },
     "inbounds": [
         {
+            "tag": "tun-in",
             "type": "tun",
             "address": [
                 "172.19.0.1/30",
                 "2001:0470:f9da:fdfa::1/64"
             ],
+            "auto_route": true,
             "mtu": 9000,
-            "sniff": true,
-            "sniff_override_destination": true,
             "stack": "system",
             "strict_route": true,
-            "auto_route": true,
-            "domain_strategy": "prefer_ipv4",
-            "endpoint_independent_nat": true
+            "route_exclude_address_set": ["geoip-ir"]
         },
         {
+            "tag": "socks-in",
             "type": "socks",
             "listen": "127.0.0.1",
             "listen_port": 2333,
-            "sniff": true,
-            "sniff_override_destination": true,
-            "domain_strategy": "prefer_ipv4",
-            "tag": "socks-in",
             "users": []
         },
         {
+            "tag": "mixed-in",
             "type": "mixed",
             "listen": "127.0.0.1",
             "listen_port": 2334,
-            "sniff": true,
-            "sniff_override_destination": true,
-            "domain_strategy": "prefer_ipv4",
-            "tag": "mixed-in",
             "users": []
         }
     ],
     "outbounds": [
         {
-            "type": "selector",
+            "tag": "DIRECT",
+            "type": "direct",
+            "domain_resolver": {
+                "server": "local"
+            }
+        },
+        {
             "tag": "دکتر‌موبایل‌جایزان",
+            "type": "selector",
+            "interrupt_exist_connections": true,
             "outbounds": [
                 "انتخاب خودکار"
             ]
         },
         {
-            "type": "urltest",
             "tag": "انتخاب خودکار",
+            "type": "urltest",
+            "url": "https://www.gstatic.com/generate_204",
+            "interval": "10m",
+            "tolerance": 50,
+            "idle_timeout": "30m",
+            "interrupt_exist_connections": false,
             "outbounds": []
-        },
-        {
-            "type": "dns",
-            "tag": "dns-out"
-        },
-        {
-            "type": "direct",
-            "tag": "direct"
-        },
-        {
-            "type": "block",
-            "tag": "block"
         }
     ],
     "route": {
-        "auto_detect_interface": true,
         "rules": [
             {
-                "outbound": "dns-out",
-                "protocol": "dns"
+                "action": "sniff"
             },
             {
-                "clash_mode": "مستقیم",
-                "outbound": "direct"
-            },
-            {
-                "clash_mode": "جهانی",
-                "outbound": "دکتر‌موبایل‌جایزان"
-            },
-            {
-                "domain": [
-                    "ddr.drmobilejayzan.info"
-                ],
-                "outbound": "direct"
-            },
-            {
-                "rule_set": [
-                    "geosite-ir",
-                    "geoip-ir"
-                ],
-                "outbound": "direct"
-            },
-            {
-                "ip_is_private": true,
-                "outbound": "direct"
+                "protocol": "dns",
+                "action": "hijack-dns"
             },
             {
                 "rule_set": [
                     "category-ads-all"
                 ],
-                "outbound": "block"
+                "action": "reject",
+                "method": "default",
+                "no_drop": false
+            },
+            {
+                "ip_is_private": true,
+                "action": "route",
+                "outbound": "DIRECT"
+            },
+            {
+                "clash_mode": "غیرفعال کردن پراکسی",
+                "action": "route",
+                "outbound": "DIRECT"
+            },
+            {
+                "clash_mode": "پراکسی سراسری",
+                "action": "route",
+                "outbound": "دکتر‌موبایل‌جایزان"
+            },
+            {
+                "rule_set": [
+                    "geosite-ir","geoip-ir"
+                ],
+                "action": "route",
+                "outbound": "DIRECT"
             }
         ],
+        "auto_detect_interface": true,
+        "final": "دکتر‌موبایل‌جایزان",
+        "default_domain_resolver": {
+            "server": "remote"
+        },
         "rule_set": [
+            {
+                "tag": "geoip-ir",
+                "type": "remote",
+                "format": "binary",
+                "url": "https://raw.githubusercontent.com/Chocolate4U/Iran-sing-box-rules/rule-set/geoip-ir.srs",
+                "download_detour": "دکتر‌موبایل‌جایزان"
+            },
             {
                 "tag": "geosite-ir",
                 "type": "remote",
                 "format": "binary",
                 "url": "https://raw.githubusercontent.com/Chocolate4U/Iran-sing-box-rules/rule-set/geosite-ir.srs",
-                "download_detour": "direct"
+                "download_detour": "دکتر‌موبایل‌جایزان"
             },
             {
                 "tag": "category-ads-all",
                 "type": "remote",
                 "format": "binary",
                 "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-category-ads-all.srs",
-                "download_detour": "direct"
-            },
-            {
-                "tag": "geoip-ir",
-                "type": "remote",
-                "format": "binary",
-                "url": "https://raw.githubusercontent.com/Chocolate4U/Iran-sing-box-rules/rule-set/geoip-ir.srs",
-                "download_detour": "direct"
+                "download_detour": "دکتر‌موبایل‌جایزان"
             }
         ]
+    },
+    "experimental": {
+        "cache_file": {
+            "enabled": true
+        },
+        "clash_api": {
+            "default_mode": "پراکسی بین‌المللی",
+            "external_controller": "127.0.0.1:9090",
+            "secret": ""
+        }
     }
 }

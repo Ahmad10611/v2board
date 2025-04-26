@@ -28,7 +28,7 @@ class ClientController extends Controller
     public function subscribe(Request $request)
     {
         $user = $request->user;
-        
+
         if (!$user || !$this->userService->isAvailable($user)) {
             return response()->json(['message' => 'Unauthorized or unavailable user'], Response::HTTP_FORBIDDEN);
         }
@@ -44,12 +44,12 @@ class ClientController extends Controller
             return $this->handleSing($user, $servers, $flag);
         }
 
-        $this->setSubscribeInfoToServers($servers, $user);
+        $this->setSubscribeInfoToServers($servers, $user->toArray());
 
         foreach (array_reverse(glob(app_path('Protocols') . '/*.php')) as $file) {
             $className = 'App\\Protocols\\' . basename($file, '.php');
             if (class_exists($className)) {
-                $instance = new $className($user, $servers);
+                $instance = new $className($user->toArray(), $servers);
                 if (strpos($flag, $instance->flag) !== false) {
                     return $instance->handle();
                 }
@@ -59,21 +59,23 @@ class ClientController extends Controller
         return $this->handleGeneral($user, $servers);
     }
 
-    private function handleGeneral($user, $servers)
+    private function handleGeneral($user, array $servers)
     {
-        $class = new General($user, $servers);
+        $class = new General($user->toArray(), $servers);
         return $class->handle();
     }
 
-    private function handleSing($user, $servers, $flag)
+    private function handleSing($user, array $servers, string $flag)
     {
         preg_match('/sing-box\s+([0-9.]+)/i', $flag, $matches);
         $version = $matches[1] ?? null;
 
+        $userArray = is_array($user) ? $user : $user->toArray();
+
         if ($version && version_compare($version, '1.12.0', '>=')) {
-            $class = new Singbox($user, $servers);
+            $class = new Singbox($userArray, $servers);
         } else {
-            $class = new SingboxOld($user, $servers);
+            $class = new SingboxOld($userArray, $servers);
         }
 
         return $class->handle();
@@ -85,11 +87,13 @@ class ClientController extends Controller
             return;
         }
 
-        $useTraffic = $user['u'] + $user['d'];
-        $totalTraffic = $user['transfer_enable'];
+        $userArray = is_array($user) ? $user : $user->toArray();
+
+        $useTraffic = $userArray['u'] + $userArray['d'];
+        $totalTraffic = $userArray['transfer_enable'];
         $remainingTraffic = Helper::trafficConvert($totalTraffic - $useTraffic);
-        $expiredDate = $user['expired_at'] ? Jalalian::forge($user['expired_at'])->format('Y-m-d') : 'نامعلوم';
-        $resetDay = $this->userService->getResetDay($user);
+        $expiredDate = $userArray['expired_at'] ? Jalalian::forge($userArray['expired_at'])->format('Y-m-d') : 'نامعلوم';
+        $resetDay = $this->userService->getResetDay((object)$userArray);
 
         array_unshift($servers, array_merge($servers[0], [
             'name' => "تاریخ：{$expiredDate}",

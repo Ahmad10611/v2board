@@ -3,95 +3,106 @@
 namespace App\Http\Controllers\V1\Client;
 
 use App\Http\Controllers\Controller;
+use App\Protocols\General;
+use App\Protocols\Singbox\Singbox;
+use App\Protocols\Singbox\SingboxOld;
+use App\Protocols\ClashMeta;
 use App\Services\ServerService;
 use App\Services\UserService;
+use App\Utils\Helper;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\File;
-use Symfony\Component\Yaml\Yaml;
+use Morilog\Jalali\Jalalian;
+use Symfony\Component\HttpFoundation\Response;
 
-class AppController extends Controller
+class ClientController extends Controller
 {
-    public function getConfig(Request $request)
+    protected UserService $userService;
+    protected ServerService $serverService;
+
+    public function __construct(UserService $userService, ServerService $serverService)
     {
-        $servers = [];
-        $user = $request->user;
-        $userService = new UserService();
-        if ($userService->isAvailable($user)) {
-            $serverService = new ServerService();
-            $servers = $serverService->getAvailableServers($user);
-        }
-        $defaultConfig = base_path() . '/resources/rules/app.clash.yaml';
-        $customConfig = base_path() . '/resources/rules/custom.app.clash.yaml';
-        if (File::exists($customConfig)) {
-            $config = Yaml::parseFile($customConfig);
-        } else {
-            $config = Yaml::parseFile($defaultConfig);
-        }
-        $proxy = [];
-        $proxies = [];
-
-        foreach ($servers as $item) {
-            if ($item['type'] === 'shadowsocks'
-                && in_array($item['cipher'], [
-                    'aes-128-gcm',
-                    'aes-192-gcm',
-                    'aes-256-gcm',
-                    'chacha20-ietf-poly1305'
-                ])
-            ) {
-                array_push($proxy, \App\Protocols\Clash::buildShadowsocks($user['uuid'], $item));
-                array_push($proxies, $item['name']);
-            }
-            if ($item['type'] === 'vmess') {
-                array_push($proxy, \App\Protocols\Clash::buildVmess($user['uuid'], $item));
-                array_push($proxies, $item['name']);
-            }
-            if ($item['type'] === 'trojan') {
-                array_push($proxy, \App\Protocols\Clash::buildTrojan($user['uuid'], $item));
-                array_push($proxies, $item['name']);
-            }
-        }
-
-        $config['proxies'] = array_merge($config['proxies'] ? $config['proxies'] : [], $proxy);
-        foreach ($config['proxy-groups'] as $k => $v) {
-            $config['proxy-groups'][$k]['proxies'] = array_merge($config['proxy-groups'][$k]['proxies'], $proxies);
-        }
-        $yamlContent = Yaml::dump($config);
-        return response($yamlContent, 200)
-            ->header('Content-Type', 'text/yaml');
+        $this->userService = $userService;
+        $this->serverService = $serverService;
     }
 
-    public function getVersion(Request $request)
+    public function subscribe(Request $request)
     {
-        if (strpos($request->header('user-agent'), 'tidalab/4.0.0') !== false
-            || strpos($request->header('user-agent'), 'tunnelab/4.0.0') !== false
-        ) {
-            if (strpos($request->header('user-agent'), 'Win64') !== false) {
-                return response([
-                    'data' => [
-                        'version' => config('v2board.windows_version'),
-                        'download_url' => config('v2board.windows_download_url')
-                    ]
-                ]);
-            } else {
-                return response([
-                    'data' => [
-                        'version' => config('v2board.macos_version'),
-                        'download_url' => config('v2board.macos_download_url')
-                    ]
-                ]);
+        $user = $request->user;
+        
+        if (!$user || !$this->userService->isAvailable($user)) {
+            return response()->json(['message' => 'Unauthorized or unavailable user'], Response::HTTP_FORBIDDEN);
+        }
+
+        $flag = strtolower($request->input('flag', $_SERVER['HTTP_USER_AGENT'] ?? ''));
+        $servers = $this->serverService->getAvailableServers($user);
+
+        if (!$flag) {
+            return $this->handleGeneral($user, $servers);
+        }
+
+        if (strpos($flag, 'sing') !== false) {
+            return $this->handleSing($user, $servers, $flag);
+        }
+
+        $this->setSubscribeInfoToServers($servers, $user);
+
+        foreach (array_reverse(glob(app_path('Protocols') . '/*.php')) as $file) {
+            $className = 'App\\Protocols\\' . basename($file, '.php');
+            if (class_exists($className)) {
+                $instance = new $className($user, $servers);
+                if (strpos($flag, $instance->flag) !== false) {
+                    return $instance->handle();
+                }
             }
+        }
+
+        return $this->handleGeneral($user, $servers);
+    }
+
+    private function handleGeneral($user, $servers)
+    {
+        $class = new General($user, $servers);
+        return $class->handle();
+    }
+
+    private function handleSing($user, $servers, $flag)
+    {
+        preg_match('/sing-box\s+([0-9.]+)/i', $flag, $matches);
+        $version = $matches[1] ?? null;
+
+        if ($version && version_compare($version, '1.12.0', '>=')) {
+            $class = new Singbox($user, $servers);
+        } else {
+            $class = new SingboxOld($user, $servers);
+        }
+
+        return $class->handle();
+    }
+
+    private function setSubscribeInfoToServers(&$servers, $user)
+    {
+        if (empty($servers) || !(int)config('v2board.show_info_to_server_enable', 0)) {
             return;
         }
-        return response([
-            'data' => [
-                'windows_version' => config('v2board.windows_version'),
-                'windows_download_url' => config('v2board.windows_download_url'),
-                'macos_version' => config('v2board.macos_version'),
-                'macos_download_url' => config('v2board.macos_download_url'),
-                'android_version' => config('v2board.android_version'),
-                'android_download_url' => config('v2board.android_download_url')
-            ]
-        ]);
+
+        $useTraffic = $user['u'] + $user['d'];
+        $totalTraffic = $user['transfer_enable'];
+        $remainingTraffic = Helper::trafficConvert($totalTraffic - $useTraffic);
+        $expiredDate = $user['expired_at'] ? Jalalian::forge($user['expired_at'])->format('Y-m-d') : 'نامعلوم';
+        $resetDay = $this->userService->getResetDay($user);
+
+        array_unshift($servers, array_merge($servers[0], [
+            'name' => "تاریخ：{$expiredDate}",
+        ]));
+
+        if ($resetDay) {
+            array_unshift($servers, array_merge($servers[0], [
+                'name' => "روزهای باقی‌مانده تا بازنشانی بعدی：{$resetDay}",
+            ]));
+        }
+
+        array_unshift($servers, array_merge($servers[0], [
+            'name' => "ترافیک：{$remainingTraffic}",
+        ]));
     }
 }

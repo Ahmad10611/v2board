@@ -2,15 +2,16 @@
 namespace App\Protocols\Singbox;
 
 use App\Utils\Helper;
+use Illuminate\Support\Facades\Log;
 
 class Singbox
 {
     public $flag = 'sing';
-    private $servers;
-    private $user;
-    private $config;
+    private array $servers;
+    private array $user;
+    private array $config;
 
-    public function __construct($user, $servers, array $options = null)
+    public function __construct(array $user, array $servers, array $options = null)
     {
         $this->user = $user;
         $this->servers = $servers;
@@ -21,67 +22,63 @@ class Singbox
         $appName = config('v2board.app_name', 'V2Board');
         $this->config = $this->loadConfig();
         $proxies = $this->buildProxies();
-        $outbounds = $this->addProxies($proxies);
-        $this->config['outbounds'] = $outbounds;
-        $user = $this->user;
+        $this->config['outbounds'] = $this->addProxies($proxies);
 
         return response(json_encode($this->config, JSON_UNESCAPED_SLASHES), 200)
             ->header('Content-Type', 'application/json')
-            ->header('subscription-userinfo', "upload={$user['u']}; download={$user['d']}; total={$user['transfer_enable']}; expire={$user['expired_at']}")
+            ->header('subscription-userinfo', "upload={$this->user['u']}; download={$this->user['d']}; total={$this->user['transfer_enable']}; expire={$this->user['expired_at']}")
             ->header('profile-update-interval', '24')
             ->header('Profile-Title', 'base64:' . base64_encode($appName))
             ->header('Content-Disposition', 'attachment; filename="' . $appName . '"');
     }
 
-    protected function loadConfig()
+    protected function loadConfig(): array
     {
         $defaultConfig = base_path('resources/rules/default.sing-box.json');
         $customConfig = base_path('resources/rules/custom.sing-box.json');
         $jsonData = file_exists($customConfig) ? file_get_contents($customConfig) : file_get_contents($defaultConfig);
 
-        return json_decode($jsonData, true);
+        $config = json_decode($jsonData, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            Log::error("JSON config parsing error: " . json_last_error_msg());
+            throw new \RuntimeException("Invalid JSON configuration file.");
+        }
+
+        return $config;
     }
 
-    protected function buildProxies()
+    protected function buildProxies(): array
     {
         $proxies = [];
-    
+
         foreach ($this->servers as $item) {
-            if ($item['type'] === 'shadowsocks') {
-                $ssConfig = $this->buildShadowsocks($this->user['uuid'], $item);
-                $proxies[] = $ssConfig;
-            }
-            if ($item['type'] === 'trojan') {
-                $trojanConfig = $this->buildTrojan($this->user['uuid'], $item);
-                $proxies[] = $trojanConfig;
-            }
-            if ($item['type'] === 'vmess') {
-                $vmessConfig = $this->buildVmess($this->user['uuid'], $item);
-                $proxies[] = $vmessConfig;
-            }
-            if ($item['type'] === 'vless') {
-                $vlessConfig = $this->buildVless($this->user['uuid'], $item);
-                $proxies[] = $vlessConfig;
-            }
-            if ($item['type'] === 'hysteria') {
-                $hysteriaConfig = $this->buildHysteria($this->user['uuid'], $item, $this->user);
-                $proxies[] = $hysteriaConfig;
+            $method = 'build' . ucfirst($item['type']);
+            if (method_exists($this, $method)) {
+                $proxies[] = $this->$method($this->user['uuid'], $item);
             }
         }
-    
+
         return $proxies;
     }
 
-    protected function addProxies($proxies)
+    protected function addProxies(array $proxies): array
     {
         foreach ($this->config['outbounds'] as &$outbound) {
-            if (($outbound['type'] === 'selector' && $outbound['tag'] === 'دکتر‌موبایل‌جایزان') || ($outbound['type'] === 'urltest' && $outbound['tag'] === 'انتخاب خودکار') || ($outbound['type'] === 'selector' && strpos($outbound['tag'], '#') === 0 )) {
+            if ($this->shouldAddProxies($outbound)) {
                 array_push($outbound['outbounds'], ...array_column($proxies, 'tag'));
             }
         }
         unset($outbound);
-        $outbounds = array_merge($this->config['outbounds'], $proxies);
-        return $outbounds;
+
+        return array_merge($this->config['outbounds'], $proxies);
+    }
+
+    private function shouldAddProxies(array $outbound): bool
+    {
+        return ($outbound['type'] === 'selector' && $outbound['tag'] === 'دکتر‌موبایل‌جایزان') ||
+               ($outbound['type'] === 'urltest' && $outbound['tag'] === 'انتخاب خودکار') ||
+               ($outbound['type'] === 'selector' && strpos($outbound['tag'], '#') === 0);
     }
 
     protected function buildShadowsocks($password, $server)

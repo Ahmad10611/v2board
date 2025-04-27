@@ -3,92 +3,86 @@
 namespace App\Http\Controllers\V1\Client;
 
 use App\Http\Controllers\Controller;
-use App\Protocols\Clash;
 use App\Services\ServerService;
 use App\Services\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Symfony\Component\Yaml\Yaml;
-use Symfony\Component\HttpFoundation\Response;
 
 class AppController extends Controller
 {
-    protected UserService $userService;
-    protected ServerService $serverService;
-
-    public function __construct(UserService $userService, ServerService $serverService)
-    {
-        $this->userService = $userService;
-        $this->serverService = $serverService;
-    }
-
     public function getConfig(Request $request)
     {
-        $user = $request->user;
         $servers = [];
-
-        if ($user && $this->userService->isAvailable($user)) {
-            $servers = $this->serverService->getAvailableServers($user);
+        $user = $request->user;
+        $userService = new UserService();
+        if ($userService->isAvailable($user)) {
+            $serverService = new ServerService();
+            $servers = $serverService->getAvailableServers($user);
         }
-
-        $defaultConfigPath = base_path('resources/rules/app.clash.yaml');
-        $customConfigPath = base_path('resources/rules/custom.app.clash.yaml');
-
-        $configPath = File::exists($customConfigPath) ? $customConfigPath : $defaultConfigPath;
-        $config = Yaml::parseFile($configPath);
-
+        $defaultConfig = base_path() . '/resources/rules/app.clash.yaml';
+        $customConfig = base_path() . '/resources/rules/custom.app.clash.yaml';
+        if (File::exists($customConfig)) {
+            $config = Yaml::parseFile($customConfig);
+        } else {
+            $config = Yaml::parseFile($defaultConfig);
+        }
         $proxy = [];
         $proxies = [];
 
         foreach ($servers as $item) {
-            switch ($item['type']) {
-                case 'shadowsocks':
-                    if (in_array($item['cipher'], ['aes-128-gcm', 'aes-192-gcm', 'aes-256-gcm', 'chacha20-ietf-poly1305'])) {
-                        $proxy[] = Clash::buildShadowsocks($user['uuid'], $item);
-                        $proxies[] = $item['name'];
-                    }
-                    break;
-                case 'vmess':
-                    $proxy[] = Clash::buildVmess($user['uuid'], $item);
-                    $proxies[] = $item['name'];
-                    break;
-                case 'trojan':
-                    $proxy[] = Clash::buildTrojan($user['uuid'], $item);
-                    $proxies[] = $item['name'];
-                    break;
+            if ($item['type'] === 'shadowsocks'
+                && in_array($item['cipher'], [
+                    'aes-128-gcm',
+                    'aes-192-gcm',
+                    'aes-256-gcm',
+                    'chacha20-ietf-poly1305'
+                ])
+            ) {
+                array_push($proxy, \App\Protocols\Clash::buildShadowsocks($user['uuid'], $item));
+                array_push($proxies, $item['name']);
+            }
+            if ($item['type'] === 'vmess') {
+                array_push($proxy, \App\Protocols\Clash::buildVmess($user['uuid'], $item));
+                array_push($proxies, $item['name']);
+            }
+            if ($item['type'] === 'trojan') {
+                array_push($proxy, \App\Protocols\Clash::buildTrojan($user['uuid'], $item));
+                array_push($proxies, $item['name']);
             }
         }
 
-        $config['proxies'] = array_merge($config['proxies'] ?? [], $proxy);
-
-        foreach ($config['proxy-groups'] as &$group) {
-            if (isset($group['proxies'])) {
-                $group['proxies'] = array_merge($group['proxies'], $proxies);
-            }
+        $config['proxies'] = array_merge($config['proxies'] ? $config['proxies'] : [], $proxy);
+        foreach ($config['proxy-groups'] as $k => $v) {
+            $config['proxy-groups'][$k]['proxies'] = array_merge($config['proxy-groups'][$k]['proxies'], $proxies);
         }
-
         $yamlContent = Yaml::dump($config);
-
-        return response($yamlContent, Response::HTTP_OK)
+        return response($yamlContent, 200)
             ->header('Content-Type', 'text/yaml');
     }
 
     public function getVersion(Request $request)
     {
-        $userAgent = $request->header('user-agent', '');
-
-        if (str_contains($userAgent, 'tidalab/4.0.0') || str_contains($userAgent, 'tunnelab/4.0.0')) {
-            $isWindows = str_contains($userAgent, 'Win64');
-            $platform = $isWindows ? 'windows' : 'macos';
-
-            return response([
-                'data' => [
-                    'version' => config("v2board.{$platform}_version"),
-                    'download_url' => config("v2board.{$platform}_download_url"),
-                ]
-            ]);
+        if (strpos($request->header('user-agent'), 'tidalab/4.0.0') !== false
+            || strpos($request->header('user-agent'), 'tunnelab/4.0.0') !== false
+        ) {
+            if (strpos($request->header('user-agent'), 'Win64') !== false) {
+                return response([
+                    'data' => [
+                        'version' => config('v2board.windows_version'),
+                        'download_url' => config('v2board.windows_download_url')
+                    ]
+                ]);
+            } else {
+                return response([
+                    'data' => [
+                        'version' => config('v2board.macos_version'),
+                        'download_url' => config('v2board.macos_download_url')
+                    ]
+                ]);
+            }
+            return;
         }
-
         return response([
             'data' => [
                 'windows_version' => config('v2board.windows_version'),
@@ -96,7 +90,7 @@ class AppController extends Controller
                 'macos_version' => config('v2board.macos_version'),
                 'macos_download_url' => config('v2board.macos_download_url'),
                 'android_version' => config('v2board.android_version'),
-                'android_download_url' => config('v2board.android_download_url'),
+                'android_download_url' => config('v2board.android_download_url')
             ]
         ]);
     }

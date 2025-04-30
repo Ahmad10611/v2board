@@ -10,6 +10,7 @@ use App\Models\ServerVless;
 use App\Models\User;
 use App\Models\ServerVmess;
 use App\Models\ServerTrojan;
+use App\Models\ServerTuic;
 use App\Utils\CacheKey;
 use App\Utils\Helper;
 use Illuminate\Support\Facades\Cache;
@@ -91,6 +92,26 @@ class ServerService
         return $servers;
     }
 
+    public function getAvailableTuic(User $user)
+    {
+        $availableServers = [];
+        $model = ServerTuic::orderBy('sort', 'ASC');
+        $servers = $model->get()->keyBy('id');
+        foreach ($servers as $key => $v) {
+            if (!$v['show']) continue;
+            $servers[$key]['type'] = 'tuic';
+            $servers[$key]['last_check_at'] = Cache::get(CacheKey::get('SERVER_TUIC_LAST_CHECK_AT', $v['id']));
+            if (!in_array($user->group_id, $v['group_id'])) continue;
+            if (isset($servers[$v['parent_id']])) {
+                $servers[$key]['last_check_at'] = Cache::get(CacheKey::get('SERVER_TUIC_LAST_CHECK_AT', $v['parent_id']));
+                $servers[$key]['created_at'] = $servers[$v['parent_id']]['created_at'];
+            }
+            $servers[$key]['server_key'] = Helper::getServerKey($servers[$key]['created_at'], 16);
+            $availableServers[] = $servers[$key]->toArray();
+        }
+        return $availableServers;
+    }
+
     public function getAvailableHysteria(User $user)
     {
         $availableServers = [];
@@ -144,6 +165,7 @@ class ServerService
             $this->getAvailableShadowsocks($user),
             $this->getAvailableVmess($user),
             $this->getAvailableTrojan($user),
+            $this->getAvailableTuic($user),
             $this->getAvailableHysteria($user),
             $this->getAvailableVless($user)
         );
@@ -255,6 +277,17 @@ class ServerService
         return $servers;
     }
 
+    public function getAllTuic()
+    {
+        $servers = ServerTuic::orderBy('sort', 'ASC')
+            ->get()
+            ->toArray();
+        foreach ($servers as $k => $v) {
+            $servers[$k]['type'] = 'tuic';
+        }
+        return $servers;
+    }
+
     public function getAllHysteria()
     {
         $servers = ServerHysteria::orderBy('sort', 'ASC')
@@ -289,6 +322,7 @@ class ServerService
             $this->getAllShadowsocks(),
             $this->getAllVMess(),
             $this->getAllTrojan(),
+            $this->getAllTuic(),
             $this->getAllHysteria(),
             $this->getAllVLess()
         );
@@ -319,6 +353,8 @@ class ServerService
                 return ServerShadowsocks::find($serverId);
             case 'trojan':
                 return ServerTrojan::find($serverId);
+            case 'tuic':
+                return ServerTuic::find($serverId);
             case 'hysteria':
                 return ServerHysteria::find($serverId);
             case 'vless':

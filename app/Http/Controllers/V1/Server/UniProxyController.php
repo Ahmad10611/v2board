@@ -202,7 +202,7 @@ class UniProxyController extends Controller
                     'server_port' => $this->nodeInfo->server_port,
                     'server_name' => $this->nodeInfo->server_name,
                     'congestion_control' => $this->nodeInfo->congestion_control,
-                    'zero_rtt_handshake' => $this->nodeInfo->zero_rtt_handshake,
+                    'zero_rtt_handshake' => $this->nodeInfo->zero_rtt_handshake ? true : false,
                 ];
                 break;
             case 'hysteria':

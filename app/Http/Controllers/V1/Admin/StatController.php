@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CommissionLog;
 use App\Models\Order;
 use App\Models\ServerHysteria;
+use App\Models\ServerTuic;
 use App\Models\ServerShadowsocks;
 use App\Models\ServerTrojan;
 use App\Models\ServerVmess;
@@ -109,6 +110,7 @@ class StatController extends Controller
             'trojan' => ServerTrojan::where('parent_id', null)->get()->toArray(),
             'vmess' => ServerVmess::where('parent_id', null)->get()->toArray(),
             'vless' => ServerVless::where('parent_id', null)->get()->toArray(),
+            'tuic' => ServerTuic::where('parent_id', null)->get()->toArray(),
             'hysteria'=> ServerHysteria::where('parent_id', null)->get()->toArray()
         ];
         $startAt = strtotime('-1 day', strtotime(date('Y-m-d')));
@@ -149,6 +151,7 @@ class StatController extends Controller
             'trojan' => ServerTrojan::where('parent_id', null)->get()->toArray(),
             'vmess' => ServerVmess::where('parent_id', null)->get()->toArray(),
             'vless' => ServerVless::where('parent_id', null)->get()->toArray(),
+            'tuic' => ServerTuic::where('parent_id', null)->get()->toArray(),
             'hysteria'=> ServerHysteria::where('parent_id', null)->get()->toArray()
         ];
         $startAt = strtotime(date('Y-m-d'));

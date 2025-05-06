@@ -1,3 +1,4 @@
+
 <?php
 
 namespace App\Protocols;
@@ -25,7 +26,7 @@ class ClashMeta
         header("subscription-userinfo: upload={$user['u']}; download={$user['d']}; total={$user['transfer_enable']}; expire={$user['expired_at']}");
         header('profile-update-interval: 24');
         header("content-disposition:attachment;filename*=UTF-8''".rawurlencode($appName));
-        $defaultConfig = base_path() . '/resources/rules/meta.clash.yaml';
+        $defaultConfig = base_path() . '/resources/rules/default.clash.yaml';
         $customConfig = base_path() . '/resources/rules/custom.clash.yaml';
         if (\File::exists($customConfig)) {
             $config = Yaml::parseFile($customConfig);
@@ -50,6 +51,10 @@ class ClashMeta
             }
             if ($item['type'] === 'trojan') {
                 array_push($proxy, self::buildTrojan($user['uuid'], $item));
+                array_push($proxies, $item['name']);
+            }
+            if ($item['type'] === 'tuic') {
+                array_push($proxy, self::buildTuic($user['uuid'], $item));
                 array_push($proxies, $item['name']);
             }
             if ($item['type'] === 'hysteria') {
@@ -153,6 +158,8 @@ class ClashMeta
                     $array['ws-opts']['path'] = $wsSettings['path'];
                 if (isset($wsSettings['headers']['Host']) && !empty($wsSettings['headers']['Host']))
                     $array['ws-opts']['headers'] = ['Host' => $wsSettings['headers']['Host']];
+                if (isset($wsSettings['security'])) 
+                    $array['cipher'] = $wsSettings['security'];
             }
         }
         if ($server['network'] === 'grpc') {
@@ -253,6 +260,29 @@ class ClashMeta
         };
         if (!empty($server['server_name'])) $array['sni'] = $server['server_name'];
         if (!empty($server['allow_insecure'])) $array['skip-cert-verify'] = ($server['allow_insecure'] ? true : false);
+        return $array;
+    }
+
+    public static function buildTuic($password, $server)
+    {
+        $array = [
+            'name' => $server['name'],
+            'type' => 'tuic',
+            'server' => $server['host'],
+            'port' => $server['port'],
+            'uuid' => $password,
+            'password' => $password,
+            'alpn' => ['h3'],
+            'disable-sni' => $server['disable_sni'] ? true : false,
+            'reduce-rtt' => $server['zero_rtt_handshake'] ? true : false,
+            'udp-relay-mode' => $server['udp_relay_mode'] ?? 'native',
+            'congestion-controller' => $server['congestion_control'] ?? 'cubic',
+            'skip-cert-verify' => $server['insecure'] ? true : false,
+        ];
+        if (isset($server['server_name'])) {
+            $array['sni'] = $server['server_name'];
+        }
+
         return $array;
     }
 

@@ -274,6 +274,7 @@ class SingboxOld
         $array['tls'] = [
             'enabled' => true,
             'insecure' => $server['insecure'] ? true : false,
+            'alpn' => ['h3'],
             'disable_sni' => $server['disable_sni'] ? true : false,
         ];
         if (isset($server['server_name'])) {

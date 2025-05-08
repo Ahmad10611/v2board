@@ -15,7 +15,7 @@ tun:
   enable: true
   stack: gvisor
   mtu: 1500
-  strict-route: true
+  strict-route: false
   auto-route: true
   auto-detect-interface: true
   dns-hijack:
@@ -32,20 +32,15 @@ dns:
   default-nameserver:
     - 1.1.1.1
     - 8.8.8.8
+  fallback:
+    - 1.1.1.1
+    - 8.8.8.8
   fake-ip-filter:
     - "*.lan"
     - "*.local"
 
 sniffer:
-  enable: true
-  sniff:
-    TLS:
-      ports: [443, 8443]
-    HTTP:
-      ports: [80, 8080]
-  skip-domain:
-    - "*.google.com"
-    - "*.apple.com"
+  enable: false
 
 proxies: []
 
@@ -61,11 +56,11 @@ proxy-groups:
     type: url-test
     proxies: []
     url: "http://www.gstatic.com/generate_204"
-    interval: 1200
+    interval: 600
     lazy: true
     health-check:
       enable: true
-      timeout: 1
+      timeout: 0.5
       retries: 2
       fail-time: 1
 
@@ -73,28 +68,32 @@ proxy-groups:
     type: fallback
     proxies: []
     url: "http://www.gstatic.com/generate_204"
-    interval: 1200
+    interval: 600
     lazy: true
     health-check:
       enable: true
-      timeout: 1
+      timeout: 0.5
       retries: 2
       fail-time: 1
 
   - name: "⚖️ متعادل‌سازی بار"
     type: load-balance
-    strategy: consistent-hashing
+    strategy: round-robin
     proxies: []
     url: "http://www.gstatic.com/generate_204"
-    interval: 6400
+    interval: 600
     lazy: true
     health-check:
       enable: true
-      timeout: 1
+      timeout: 0.5
       retries: 2
       fail-time: 1
 
 rules:
+  # قوانین دستی برای دامنه‌های ایرانی اضافه شده‌اند
+  - DOMAIN-SUFFIX,ir,DIRECT
+  - DOMAIN-SUFFIX,gov.ir,DIRECT
+  - DOMAIN-SUFFIX,ac.ir,DIRECT
   - RULE-SET,ir,DIRECT
   - RULE-SET,ircidr,DIRECT
   - RULE-SET,irasn,DIRECT
@@ -138,7 +137,7 @@ rule-providers:
     format: yaml
     behavior: domain
     url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/cryptominers.yaml"
-    path: ./ruleset/cryptominers.yaml"
+    path: ./ruleset/cryptominers.yaml
     interval: 86400
   ircidr:
     type: http

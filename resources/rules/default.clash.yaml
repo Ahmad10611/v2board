@@ -57,24 +57,12 @@ proxy-groups:
     proxies: []
     url: "http://www.gstatic.com/generate_204"
     interval: 600
-    lazy: true
-    health-check:
-      enable: true
-      timeout: 0.5
-      retries: 2
-      fail-time: 1
 
   - name: "🚀 اولین سرور فعال 🚀"
     type: fallback
     proxies: []
     url: "http://www.gstatic.com/generate_204"
     interval: 600
-    lazy: true
-    health-check:
-      enable: true
-      timeout: 0.5
-      retries: 2
-      fail-time: 1
 
   - name: "⚖️ متعادل‌سازی بار"
     type: load-balance
@@ -82,12 +70,6 @@ proxy-groups:
     proxies: []
     url: "http://www.gstatic.com/generate_204"
     interval: 600
-    lazy: true
-    health-check:
-      enable: true
-      timeout: 0.5
-      retries: 2
-      fail-time: 1
 
 rules:
   # قوانین دستی برای دامنه‌های ایرانی اضافه شده‌اند

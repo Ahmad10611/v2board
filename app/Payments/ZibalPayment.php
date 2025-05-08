@@ -105,18 +105,21 @@ class ZibalPayment
                 return false;
             }
 
+            Log::info('Raw cardNumber from Zibal:', ['cardNumber' => $result['cardNumber'] ?? 'N/A']);
+
+            $cardNumber = isset($result['cardNumber']) ? $this->maskCardNumber($result['cardNumber']) : 'N/A';
+
             return [
                 'trade_no' => $params['orderId'],
                 'callback_no' => $params['trackId'],
-                'amount' => $order->total_amount
+                'amount' => $order->total_amount,
+                'card_number' => $cardNumber
             ];
-
         } catch (\Exception $e) {
             Log::error('Zibal verify error: ' . $e->getMessage());
             return false;
         }
     }
-
     private function filterLogData($data)
     {
         return array_map(function ($item) {
@@ -125,9 +128,25 @@ class ZibalPayment
             }
             if (is_string($item)) {
                 $item = preg_replace('/token=([^&]+)/', 'token=****', $item);
-                $item = preg_replace('/"cardNumber":"(\d{6})\d+/', '"cardNumber":"$1****"', $item);
+                $item = preg_replace('/"cardNumber":"[^"]+"/', '"cardNumber":"****"', $item);
             }
             return $item;
         }, $data);
+    }
+    private function maskCardNumber($cardNumber)
+    {
+        if (empty($cardNumber) || !is_string($cardNumber)) {
+            return 'N/A';
+        }
+        if (preg_match('/^\d{6}\*{6}\d{4}$/', $cardNumber)) {
+            return $cardNumber;
+        }
+        if (preg_match('/^\d{10}$/', $cardNumber)) {
+            return substr($cardNumber, 0, 6) . '******' . substr($cardNumber, -4);
+        }
+        if (strlen($cardNumber) >= 16 && ctype_digit($cardNumber)) {
+            return substr($cardNumber, 0, 6) . '******' . substr($cardNumber, -4);
+        }
+        return 'N/A';
     }
 }

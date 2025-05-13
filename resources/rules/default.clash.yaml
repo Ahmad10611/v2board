@@ -1,19 +1,17 @@
-port: 59950
-socks-port: 38815
-redir-port: 32488
+# port: 7890
+# socks-port: 7891
+# redir-port: 7892
+# tproxy-port: 7893
+mixed-port: 7890
+allow-lan: true
+bind-address: "*"
 mode: rule
-allow-lan: false
-bind-address: 127.0.0.1
-log-level: silent
-ipv6: false
-external-controller: 127.0.0.1:54344
-secret: "YourSecurePasswordHere!"
-tcp-concurrent: true
-find-process-mode: off
+log-level: info
+external-controller: 127.0.0.1:9090
 
 tun:
   enable: true
-  stack: gvisor
+  stack: mixed
   mtu: 1500
   strict-route: false
   auto-route: true
@@ -24,55 +22,44 @@ tun:
 
 dns:
   enable: true
+  listen: 0.0.0.0:53
+  ipv6: false
+  prefer-h3: false
+  default-nameserver:
+    - 85.15.1.14
+    - 185.51.200.2
+    - 62.193.0.130
+    - 217.218.155.155
   enhanced-mode: fake-ip
   fake-ip-range: 198.18.0.1/16
+  use-hosts: true
+  respect-rules: true
+  proxy-server-nameserver:
+    - 8.8.8.8
+    - 8.8.4.4
+    - 1.1.1.1
+    - 9.9.9.9
   nameserver:
-    - 1.1.1.1
     - 8.8.8.8
-  default-nameserver:
+    - 8.8.4.4
     - 1.1.1.1
-    - 8.8.8.8
+    - 9.9.9.9
   fallback:
     - 1.1.1.1
     - 8.8.8.8
   fake-ip-filter:
     - "*.lan"
     - "*.local"
-
-sniffer:
-  enable: false
+    - "localhost"
 
 proxies: []
 
 proxy-groups:
-  - name: "💉دکتر‌موبایل‌جایزان"
-    type: select
-    proxies:
-      - "🚀 خودکار 🚀"
-      - "🚀 اولین سرور فعال 🚀"
-      - "⚖️ متعادل‌سازی بار"
-
-  - name: "🚀 خودکار 🚀"
-    type: url-test
-    proxies: []
-    url: "http://www.gstatic.com/generate_204"
-    interval: 600
-
-  - name: "🚀 اولین سرور فعال 🚀"
-    type: fallback
-    proxies: []
-    url: "http://www.gstatic.com/generate_204"
-    interval: 600
-
-  - name: "⚖️ متعادل‌سازی بار"
-    type: load-balance
-    strategy: round-robin
-    proxies: []
-    url: "http://www.gstatic.com/generate_204"
-    interval: 600
+  - { name: "💉دکتر‌موبایل‌جایزان", type: select, proxies: ["🚀 خودکار 🚀", "🚀 اولین سرور فعال 🚀"] }
+  - { name: "🚀 خودکار 🚀", type: url-test, proxies: [], url: "http://www.gstatic.com/generate_204", interval: 86400 }
+  - { name: "🚀 اولین سرور فعال 🚀", type: fallback, proxies: [], url: "http://www.gstatic.com/generate_204", interval: 7200 }
 
 rules:
-  # قوانین دستی برای دامنه‌های ایرانی اضافه شده‌اند
   - DOMAIN-SUFFIX,ir,DIRECT
   - DOMAIN-SUFFIX,gov.ir,DIRECT
   - DOMAIN-SUFFIX,ac.ir,DIRECT

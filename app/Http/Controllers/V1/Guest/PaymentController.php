@@ -10,45 +10,78 @@ use App\Services\PaymentService;
 use App\Services\TelegramService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller
 {
     public function notify($method, $uuid, Request $request)
     {
+        $requestData = $request->all();
+        
         $this->logInfo('Payment notification received', [
             'method' => $method,
             'uuid' => $uuid,
-            'request_data' => $request->all(),
+            'request_data' => $requestData,
         ]);
 
+        // جلوگیری از پردازش همزمان
+        $lockKey = "payment_lock_{$uuid}";
+        $lock = Cache::lock($lockKey, 30);
+        
+        if (!$lock->get()) {
+            // اگر locked است، احتمالا در حال پردازش است
+            sleep(2);
+            $previousResult = Cache::get("payment_response_{$uuid}");
+            if ($previousResult && is_array($previousResult)) {
+                return $this->renderPaymentResult(
+                    $previousResult['success'], 
+                    $previousResult['success'] ? 'پرداخت با موفقیت انجام شد.' : 'خطا در پردازش پرداخت.',
+                    $previousResult['trade_no'] ?? null
+                );
+            }
+        }
+
+        DB::beginTransaction();
+        
         try {
             $paymentService = new PaymentService($method, null, $uuid);
-            $verificationResult = $paymentService->notify($request->all());
+            $verificationResult = $paymentService->notify($requestData);
 
             $this->logInfo('Payment verification result', ['verify' => $verificationResult]);
 
             if ($verificationResult === false) {
                 throw new \Exception('Transaction was not successful or verification failed');
             }
+            
             $cardNumber = $verificationResult['card_number'] ?? 'N/A';
 
             if (!$this->handleOrder($verificationResult['trade_no'], $verificationResult['callback_no'], $cardNumber)) {
                 throw new \Exception('Handle error');
             }
-            $response = $verificationResult['custom_result'] ?? 'success';
-            $this->logInfo('Payment process completed', ['response' => $response]);
-
-            $this->logInfo('Redirecting to success page', [
+            
+            DB::commit();
+            
+            // ذخیره نتیجه برای جلوگیری از پردازش تکراری
+            Cache::put("payment_response_{$uuid}", [
+                'success' => true,
                 'trade_no' => $verificationResult['trade_no']
-            ]);
+            ], 300);
+            
+            $this->logInfo('Payment process completed', ['response' => 'success']);
+            
+            $lock->release();
+            
             return $this->renderPaymentResult(true, 'پرداخت با موفقیت انجام شد.', $verificationResult['trade_no']);
+            
         } catch (\Exception $e) {
+            DB::rollBack();
+            $lock->release();
             $this->logError('Payment notification error', $e);
-
             return $this->renderPaymentResult(false, 'خطا در پردازش پرداخت.');
         }
     }
+    
     private function handleOrder($tradeNo, $transactionId, $cardNumber = 'N/A')
     {
         $this->logInfo('Handling payment', [
@@ -56,35 +89,52 @@ class PaymentController extends Controller
             'transaction_id' => $transactionId,
             'card_number' => $cardNumber
         ]);
+        
         $order = Cache::remember("order_{$tradeNo}", 60, function() use ($tradeNo) {
             return Order::where('trade_no', $tradeNo)->first();
         });
+        
         if (!$order) {
             $this->logError('Order not found', ['trade_no' => $tradeNo]);
             return false;
         }
-        $this->logInfo('Order found', ['order' => $order->toArray()]);
+        
+        $this->logInfo('Order found', [
+            'order_id' => $order->id,
+            'trade_no' => $order->trade_no,
+            'status' => $order->status,
+            'total_amount' => $order->total_amount
+        ]);
 
         if ($order->status !== 0) {
             $this->logInfo('Order already processed', ['trade_no' => $tradeNo]);
             return true;
         }
+        
+        // پرداخت با موجودی
         if ($order->total_amount == 0 && $order->balance_amount > 0) {
             $this->logInfo('Order paid using balance', [
                 'trade_no' => $tradeNo,
                 'balance_used' => $order->balance_amount
             ]);
+            
             $order->status = 3;
             $order->paid_at = now();
             $order->updated_at = now();
             $order->save();
+            
+            Cache::forget("order_{$tradeNo}");
 
             $this->logInfo('Order status updated successfully using balance', [
                 'trade_no' => $tradeNo
             ]);
+            
+            $this->sendBalanceNotification($order);
+            
             return true;
         }
-        $user = User::find($order->user_id);
+        
+        // پرداخت معمولی
         $orderService = new OrderService($order);
 
         if (!$orderService->paid($transactionId)) {
@@ -94,22 +144,73 @@ class PaymentController extends Controller
             ]);
             return false;
         }
+        
+        Cache::forget("order_{$tradeNo}");
+        
         $this->logInfo('Order status updated successfully', [
             'trade_no' => $tradeNo,
             'transaction_id' => $transactionId
         ]);
-        $adjustedAmount = $order->total_amount;
-        $message = $this->generateTelegramMessage($adjustedAmount, $order, $user, $cardNumber);
-
-        $telegramService = new TelegramService();
-        $telegramService->sendMessageWithAdmin($message);
-
-        $this->logInfo('Telegram message sent', [
-            'message' => $message
-        ]);
+        
+        $this->sendPaymentNotification($order, $cardNumber);
 
         return true;
     }
+    
+    private function sendPaymentNotification($order, $cardNumber)
+    {
+        try {
+            $user = User::find($order->user_id);
+            if (!$user) {
+                $this->logError('User not found for telegram notification', [
+                    'user_id' => $order->user_id
+                ]);
+                return;
+            }
+            
+            $adjustedAmount = $order->total_amount;
+            $message = $this->generateTelegramMessage($adjustedAmount, $order, $user, $cardNumber);
+
+            $telegramService = new TelegramService();
+            $telegramService->sendMessageWithAdmin($message);
+            
+            $this->logInfo('Telegram message sent', ['trade_no' => $order->trade_no]);
+            
+        } catch (\Exception $e) {
+            $this->logError('Telegram send failed', $e);
+        }
+    }
+    
+    private function sendBalanceNotification($order)
+    {
+        try {
+            $user = User::find($order->user_id);
+            if (!$user) {
+                return;
+            }
+            
+            $message = sprintf(
+                "💳 پرداخت با موجودی حساب\n" .
+                "———————————————\n" .
+                "شماره سفارش: %s\n" .
+                "مبلغ: %s تومان\n" .
+                "ایمیل: %s\n" .
+                "———————————————\n" .
+                "زمان: %s",
+                $order->trade_no,
+                number_format($order->balance_amount),
+                $user->email,
+                now()->format('Y-m-d H:i:s')
+            );
+            
+            $telegramService = new TelegramService();
+            $telegramService->sendMessageWithAdmin($message);
+            
+        } catch (\Exception $e) {
+            $this->logError('Balance payment telegram failed', $e);
+        }
+    }
+    
     private function renderPaymentResult($success, $message, $tradeNo = null)
     {
         $this->logInfo('Rendering payment result', [
@@ -117,17 +218,18 @@ class PaymentController extends Controller
             'trade_no' => $tradeNo,
             'message' => $message
         ]);
+        
         $orderInfo = '';
         if ($success && $tradeNo) {
-            $order = Cache::remember("order_{$tradeNo}", 60, function() use ($tradeNo) {
-                return Order::where('trade_no', $tradeNo)->first();
-            });
+            $order = Cache::get("order_{$tradeNo}") ?: Order::where('trade_no', $tradeNo)->first();
+            
             if ($order) {
                 $adjustedAmount = ($order->total_amount > 0) ? $order->total_amount : $order->balance_amount;
                 $orderInfo = "<p>شماره سفارش: {$order->trade_no}</p>" .
                              "<p>مبلغ پرداخت شده: " . number_format($adjustedAmount, 0, '.', ',') . " تومان</p>";
             }
         }
+        
         if ($success) {
             $this->logInfo('Success page displayed', ['trade_no' => $tradeNo]);
             return view('success', compact('orderInfo'));
@@ -136,6 +238,7 @@ class PaymentController extends Controller
             return view('failure', compact('message'));
         }
     }
+    
     private function logInfo($message, $data = [])
     {
         Log::channel('payment')->info($message, [
@@ -146,23 +249,37 @@ class PaymentController extends Controller
             'user_agent' => request()->header('User-Agent')
         ]);
     }
-    private function logError($message, \Exception $e)
+    
+    private function logError($message, $data)
     {
-        Log::channel('payment')->error($message, [
-            'timestamp' => now(),
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-            'memory_usage' => memory_get_usage(),
-            'request_ip' => request()->ip(),
-            'user_agent' => request()->header('User-Agent')
-        ]);
+        if ($data instanceof \Exception) {
+            Log::channel('payment')->error($message, [
+                'timestamp' => now(),
+                'error' => $data->getMessage(),
+                'trace' => $data->getTraceAsString(),
+                'memory_usage' => memory_get_usage(),
+                'request_ip' => request()->ip(),
+                'user_agent' => request()->header('User-Agent')
+            ]);
+        } else {
+            Log::channel('payment')->error($message, [
+                'timestamp' => now(),
+                'context' => $data,
+                'memory_usage' => memory_get_usage(),
+                'request_ip' => request()->ip(),
+                'user_agent' => request()->header('User-Agent')
+            ]);
+        }
     }
+    
     private function generateTelegramMessage($adjustedAmount, $order, $user, $cardNumber)
     {
         Log::info('CardNumber before formatting:', ['cardNumber' => $cardNumber]);
         $formattedCardNumber = $this->formatCardNumber($cardNumber);
         Log::info('Formatted cardNumber for Telegram:', ['formattedCardNumber' => $formattedCardNumber]);
-        $subscribeLink = "http://ddr.drmobilejayzan.info/api/v1/client/subscribe?token=" . $user->token;
+        
+        $subscribeLink = config('app.url', 'http://ddr.drmobilejayzan.info') . "/api/v1/client/subscribe?token=" . $user->token;
+        
         return sprintf(
             "💰 پرداخت موفق به مبلغ %s تومان\n———————————————\nشماره سفارش: %s\nایمیل کاربر: %s\nشماره کارت: %s\n———————————————\nلینک اشتراک: %s",
             number_format($adjustedAmount, 0, '.', ','),
@@ -172,28 +289,19 @@ class PaymentController extends Controller
             $subscribeLink
         );
     }
+    
     private function formatCardNumber($cardNumber)
     {
         if (empty($cardNumber) || !is_string($cardNumber)) {
             return 'N/A';
         }
-        if (preg_match('/^\d{6}\*{6}\d{4}$/', $cardNumber)) {
-
-            $lastFour = substr($cardNumber, -4);
-            $firstSix = substr($cardNumber, 0, 6);
-            return $lastFour . '......' . $firstSix;
+        
+        $cardNumber = preg_replace('/\D/', '', $cardNumber);
+        
+        if (strlen($cardNumber) < 10) {
+            return 'N/A';
         }
-        if (preg_match('/^\d{10}$/', $cardNumber)) {
-            $lastFour = substr($cardNumber, -4);
-            $firstSix = substr($cardNumber, 0, 6);
-            return $lastFour . '......' . $firstSix;
-        }
-
-        if (strlen($cardNumber) >= 16 && ctype_digit($cardNumber)) {
-            $lastFour = substr($cardNumber, -4);
-            $firstSix = substr($cardNumber, 0, 6);
-            return $lastFour . '......' . $firstSix;
-        }
-        return 'N/A';
+        
+        return substr($cardNumber, -4) . '......' . substr($cardNumber, 0, 6);
     }
 }

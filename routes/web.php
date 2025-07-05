@@ -3,7 +3,6 @@
 use App\Services\ThemeService;
 use Illuminate\Http\Request;
 use App\Http\Controllers\V1\Guest\PaymentController;
-use Illuminate\Support\Facades\Cache;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,15 +17,13 @@ Route::get('/', function (Request $request) {
         }
     }
     
-    $renderParams = Cache::remember('v2board_render_params', 3600, function() {
-        return [
-            'title' => config('v2board.app_name', 'V2Board'),
-            'theme' => config('v2board.frontend_theme', 'default'),
-            'version' => config('app.version'),
-            'description' => config('v2board.app_description', 'V2Board is best'),
-            'logo' => config('v2board.logo')
-        ];
-    });
+    $renderParams = [
+        'title' => config('v2board.app_name', 'V2Board'),
+        'theme' => config('v2board.frontend_theme', 'default'),
+        'version' => config('app.version'),
+        'description' => config('v2board.app_description', 'V2Board is best'),
+        'logo' => config('v2board.logo')
+    ];
 
     if (!config("theme.{$renderParams['theme']}")) {
         $themeService = new ThemeService($renderParams['theme']);

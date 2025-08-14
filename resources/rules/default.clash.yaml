@@ -1,123 +1,147 @@
-# port: 7890
-# socks-port: 7891
-# redir-port: 7892
-# tproxy-port: 7893
-mixed-port: 7890
-allow-lan: true
-bind-address: "*"
-mode: rule
-log-level: info
-external-controller: 127.0.0.1:9090
+# ========================================
+# Clash Meta Configuration - امنیت کامل
+# ========================================
 
+# پورت‌ها و تنظیمات اصلی
+port: 7890
+socks-port: 7891
+mixed-port: 7890
+allow-lan: false
+bind-address: "127.0.0.1"
+mode: rule
+log-level: silent
+ipv6: false
+geodata-mode: false
+geodata-loader: memconservative
+keep-alive-interval: 15
+tcp-concurrent: true
+enable-process: false
+find-process-mode: off
+global-client-fingerprint: chrome
+external-controller: 127.0.0.1:9090
+secret: ""
+profile:
+  store-selected: false
+  store-fake-ip: false
+  store-rdrc: false
+
+# تنظیمات TUN
 tun:
   enable: true
-  stack: gvisor
-  mtu: 1500
-  strict-route: false
+  device: meta
+  mtu: 1280
+  stack: mixed
+  dns-hijack: [any:53, tcp://any:53, udp://any:53]
   auto-route: true
   auto-detect-interface: true
-  dns-hijack:
-    - any:53
-    - tcp://any:53
+  strict-route: true
+  endpoint-independent-nat: true
+  route-address: [0.0.0.0/1, 128.0.0.0/1]
+  route-exclude-address: [192.168.0.0/16, 172.16.0.0/12, 10.0.0.0/8, 127.0.0.0/8, 169.254.0.0/16, 224.0.0.0/4, 255.255.255.255/32]
+  include-uid: []
+  exclude-uid: []
+  include-uid-range: []
+  exclude-uid-range: []
+  include-android-user: []
+  exclude-android-user: []
+  include-package: []
+  exclude-package: []
 
+# تنظیمات DNS
 dns:
   enable: true
-  ipv6: true
+  ipv6: false
   prefer-h3: true
-  default-nameserver:
-    - 8.8.8.8
-    - 1.1.1.1
-    - 185.51.200.2
-    - 62.193.0.130
-  enhanced-mode: fake-ip
-  fake-ip-range: 198.18.0.1/16
-  use-hosts: true
+  use-hosts: false
+  use-system-hosts: false
   respect-rules: true
-  proxy-server-nameserver:
-    - 8.8.8.8
-    - 8.8.4.4
-    - 1.1.1.1
-    - 9.9.9.9
-  nameserver:
-    - 8.8.8.8
-    - 8.8.4.4
-    - 1.1.1.1
-    - 9.9.9.9
-  fallback:
-    - 1.1.1.1
-    - 8.8.8.8
-  fake-ip-filter:
-    - "*.lan"
-    - "*.local"
-    - "localhost"
+  enhanced-mode: fake-ip
+  fake-ip-range: 28.0.0.1/8
+  fake-ip-filter: ["*.lan", "*.local", "*.localhost", "*.invalid", "*.test", "*.home.arpa", "*.example", "*.bogon", "router.asus.com", "hotspot.cslwifi.com", "amplifi.lan", "router.synology.com", "*.apple.com", "*.icloud.com"]
+  default-nameserver: [1.1.1.1, 8.8.8.8, 9.9.9.9]
+  proxy-server-nameserver: [1.1.1.1, 8.8.8.8, 9.9.9.9]
+  nameserver: [https://1.1.1.1/dns-query#h3=true, https://1.0.0.1/dns-query#h3=true, https://8.8.8.8/dns-query, https://9.9.9.9/dns-query, tls://1.1.1.1:853, tls://1.0.0.1:853]
+  fallback: [https://45.90.28.0/dns-query, https://45.90.30.0/dns-query, https://208.67.222.222/dns-query, tls://45.90.28.0:853, tls://45.90.30.0:853]
+  fallback-filter:
+    geoip: true
+    geoip-code: IR
+    domain: ['+.google.com', '+.facebook.com', '+.youtube.com', '+.githubusercontent.com', '+.googlevideo.com', '+.cloudflare.com']
+    ipcidr: [240.0.0.0/4, 0.0.0.0/32, 127.0.0.1/32, 192.168.0.0/16, 10.0.0.0/8, 172.16.0.0/12]
 
+# پروکسی‌ها (اضافه کنید)
 proxies: []
 
+# گروه‌های پروکسی
 proxy-groups:
-  - { name: "💉دکتر‌موبایل‌جایزان", type: select, proxies: ["🚀 خودکار 🚀", "🚀 اولین سرور فعال 🚀"] }
-  - { name: "🚀 خودکار 🚀", type: url-test, proxies: [], url: "http://www.gstatic.com/generate_204", interval: 86400 }
-  - { name: "🚀 اولین سرور فعال 🚀", type: fallback, proxies: [], url: "http://www.gstatic.com/generate_204", interval: 7200 }
+  - {name: "🌐 Proxy", type: select, proxies: ["🚀 خودکار", "⚖️ لودبالانس", "🔄 جایگزین", "DIRECT"]}
+  - {name: "🚀 خودکار", type: url-test, proxies: [], url: "http://cp.cloudflare.com/generate_204", interval: 120, tolerance: 50, timeout: 2500, lazy: true}
+  - {name: "⚖️ لودبالانس", type: load-balance, proxies: [], url: "http://cp.cloudflare.com/generate_204", interval: 120, strategy: consistent-hashing, timeout: 2500}
+  - {name: "🔄 جایگزین", type: fallback, proxies: [], url: "http://cp.cloudflare.com/generate_204", interval: 120, timeout: 2500}
 
+# قوانین مسیریابی
 rules:
+  - RULE-SET,iran-ads,REJECT
+  - RULE-SET,global-ads,REJECT
+  - RULE-SET,privacy-block,REJECT
+  - RULE-SET,tracking-block,REJECT
+  - RULE-SET,malware-block,REJECT
+  - RULE-SET,mining-block,REJECT
+  - RULE-SET,webrtc-block,REJECT
+  - RULE-SET,iran-direct,DIRECT
+  - RULE-SET,iran-cidr,DIRECT
   - DOMAIN-SUFFIX,ir,DIRECT
-  - DOMAIN-SUFFIX,gov.ir,DIRECT
   - DOMAIN-SUFFIX,ac.ir,DIRECT
-  - RULE-SET,ir,DIRECT
-  - RULE-SET,ircidr,DIRECT
-  - RULE-SET,irasn,DIRECT
-  - RULE-SET,ads,REJECT
-  - RULE-SET,malware,REJECT
-  - RULE-SET,phishing,REJECT
-  - RULE-SET,cryptominers,REJECT
-  - MATCH,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,gov.ir,DIRECT
+  - DOMAIN-SUFFIX,org.ir,DIRECT
+  - DOMAIN-SUFFIX,net.ir,DIRECT
+  - DOMAIN-SUFFIX,co.ir,DIRECT
+  - DOMAIN-KEYWORD,digikala,DIRECT
+  - DOMAIN-KEYWORD,snapp,DIRECT
+  - DOMAIN-KEYWORD,divar,DIRECT
+  - DOMAIN-KEYWORD,tapsi,DIRECT
+  - DOMAIN-KEYWORD,sheypoor,DIRECT
+  - GEOIP,IR,DIRECT
+  - DOMAIN,stun.l.google.com,REJECT
+  - DOMAIN-SUFFIX,stun.services.mozilla.com,REJECT
+  - DOMAIN-KEYWORD,stun,REJECT
+  - DOMAIN-KEYWORD,webrtc,REJECT
+  - RULE-SET,telegram-proxy,🌐 Proxy
+  - RULE-SET,streaming-proxy,🌐 Proxy
+  - RULE-SET,social-proxy,🌐 Proxy
+  - RULE-SET,google-proxy,🌐 Proxy
+  - IP-CIDR,10.0.0.0/8,DIRECT,no-resolve
+  - IP-CIDR,172.16.0.0/12,DIRECT,no-resolve
+  - IP-CIDR,192.168.0.0/16,DIRECT,no-resolve
+  - IP-CIDR,127.0.0.0/8,DIRECT,no-resolve
+  - IP-CIDR,169.254.0.0/16,DIRECT,no-resolve
+  - IP-CIDR,224.0.0.0/4,DIRECT,no-resolve
+  - IP-CIDR,240.0.0.0/4,DIRECT,no-resolve
+  - IP-CIDR,255.255.255.255/32,DIRECT,no-resolve
+  - IP-CIDR6,fe80::/10,DIRECT,no-resolve
+  - IP-CIDR6,fd00::/8,DIRECT,no-resolve
+  - MATCH,🌐 Proxy
 
+# Rule Providers
 rule-providers:
-  ir:
-    type: http
-    format: yaml
-    behavior: domain
-    url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/ir.yaml"
-    path: ./ruleset/ir.yaml
-    interval: 86400
-  ads:
-    type: http
-    format: yaml
-    behavior: domain
-    url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/ads.yaml"
-    path: ./ruleset/ads.yaml
-    interval: 86400
-  malware:
-    type: http
-    format: yaml
-    behavior: domain
-    url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/malware.yaml"
-    path: ./ruleset/malware.yaml
-    interval: 86400
-  phishing:
-    type: http
-    format: yaml
-    behavior: domain
-    url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/phishing.yaml"
-    path: ./ruleset/phishing.yaml
-    interval: 86400
-  cryptominers:
-    type: http
-    format: yaml
-    behavior: domain
-    url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/cryptominers.yaml"
-    path: ./ruleset/cryptominers.yaml
-    interval: 86400
-  ircidr:
-    type: http
-    format: yaml
-    behavior: ipcidr
-    url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/ircidr.yaml"
-    path: ./ruleset/ircidr.yaml
-    interval: 86400
-  irasn:
-    type: http
-    format: yaml
-    behavior: classical
-    url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/irasn.yaml"
-    path: ./ruleset/irasn.yaml
-    interval: 86400
+  iran-direct: {type: http, behavior: domain, format: yaml, url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/ir.yaml", path: ./ruleset/iran.yaml, interval: 86400}
+  iran-cidr: {type: http, behavior: ipcidr, format: yaml, url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/ircidr.yaml", path: ./ruleset/iran-cidr.yaml, interval: 86400}
+  iran-ads: {type: http, behavior: domain, format: yaml, url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/ads.yaml", path: ./ruleset/iran-ads.yaml, interval: 86400}
+  global-ads: {type: http, behavior: domain, format: yaml, url: "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/clash/pro.yaml", path: ./ruleset/global-ads.yaml, interval: 86400}
+  privacy-block: {type: http, behavior: domain, format: yaml, url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Privacy/Privacy_Domain.yaml", path: ./ruleset/privacy.yaml, interval: 86400}
+  tracking-block: {type: http, behavior: domain, format: yaml, url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Hijacking/Hijacking.yaml", path: ./ruleset/tracking.yaml, interval: 86400}
+  malware-block: {type: http, behavior: domain, format: yaml, url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/malware.yaml", path: ./ruleset/malware.yaml, interval: 86400}
+  mining-block: {type: http, behavior: domain, format: yaml, url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/cryptominers.yaml", path: ./ruleset/mining.yaml, interval: 86400}
+  webrtc-block: {type: http, behavior: domain, format: yaml, url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/WebRTC/WebRTC.yaml", path: ./ruleset/webrtc.yaml, interval: 86400}
+  telegram-proxy: {type: http, behavior: classical, format: yaml, url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Telegram/Telegram.yaml", path: ./ruleset/telegram.yaml, interval: 86400}
+  streaming-proxy: {type: http, behavior: classical, format: yaml, url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/GlobalMedia/GlobalMedia.yaml", path: ./ruleset/streaming.yaml, interval: 86400}
+  social-proxy: {type: http, behavior: classical, format: yaml, url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Twitter/Twitter.yaml", path: ./ruleset/social.yaml, interval: 86400}
+  google-proxy: {type: http, behavior: classical, format: yaml, url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Google/Google.yaml", path: ./ruleset/google.yaml, interval: 86400}
+
+# تنظیمات تجربی
+experimental:
+  sniff-tls-sni: false
+  ignore-resolve-fail: true
+  interface-name: ""
+  quic-go-disable-gso: false
+  quic-go-disable-ecn: false
+  fingerprint: ""

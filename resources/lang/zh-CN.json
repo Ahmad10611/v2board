@@ -1,4 +1,18 @@
 {
+    
+    "Renewal is not allowed": "تمدید مجاز نیست",
+    "You have not used up your traffic, you cannot renew your subscription": "هنوز حجم مصرفی شما تمام نشده است، امکان تمدید اشتراک وجود ندارد",
+    "You do not allow to renew the subscription": "شما اجازه تمدید اشتراک را ندارید",
+    "Invalid reset period": "دوره ریست نامعتبر است",
+    "You do not have enough time to renew your subscription": "زمان کافی برای تمدید اشتراک ندارید",
+    "The gift card does not exist": "کارت هدیه وجود ندارد",
+    "The gift card is not yet valid": "کارت هدیه هنوز معتبر نیست",
+    "The gift card has expired": "کارت هدیه منقضی شده است",
+    "The gift card usage limit has been reached": "محدودیت استفاده از کارت هدیه به پایان رسیده است",
+    "The gift card has already been used by this user": "این کارت هدیه قبلاً توسط این کاربر استفاده شده است",
+    "Not suitable gift card type": "نوع کارت هدیه مناسب نیست",
+    "Unknown gift card type": "نوع کارت هدیه ناشناخته است",
+    "Unbind telegram failed": "لغو اتصال تلگرام انجام نشد",
     "The user does not exist": "این کاربر وجود ندارد",
     "The old password is wrong": "رمز قدیمی اشتباه است",
     "Save failed": "ذخیره انجام نشد",

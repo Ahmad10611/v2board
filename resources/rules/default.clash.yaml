@@ -4,11 +4,11 @@ mixed-port: 7890
 allow-lan: false
 bind-address: "127.0.0.1"
 mode: rule
-log-level: silent
+log-level: info  # تغییر به info برای دیدن لاگ‌ها
 ipv6: false
 geodata-mode: false
 geodata-loader: memconservative
-keep-alive-interval: 90
+keep-alive-interval: 30  # کاهش برای اتصال پایدارتر
 tcp-concurrent: true
 enable-process: false
 find-process-mode: off
@@ -16,23 +16,218 @@ global-client-fingerprint: chrome
 external-controller: 127.0.0.1:9090
 #secret: ""
 profile:
-  store-selected: false
-  store-fake-ip: false
+  store-selected: true  # ذخیره انتخاب پروکسی
+  store-fake-ip: true   # ذخیره کش fake-ip
   store-rdrc: false
+
+# تنظیمات Sniffer پیشرفته
+sniffer:
+  enable: true
+  
+  # تشخیص SNI در TLS/HTTPS برای شناسایی دامنه واقعی
+  sniff-tls-sni: true
+  
+  # پورت‌هایی که باید sniff شوند
+  # شامل پورت‌های رایج وب، ایمیل، و اپلیکیشن‌ها
+  port-whitelist:
+    - 80    # HTTP
+    - 443   # HTTPS
+    - 8080  # HTTP Alternate
+    - 8443  # HTTPS Alternate
+    - 853   # DNS over TLS
+    - 5228  # Google Play Store/Services
+    - 5229  # Google Play Store/Services
+    - 5230  # Google Play Store/Services
+    - 8888  # Alternative HTTP
+    - 8889  # Alternative HTTPS
+    - 3478  # WhatsApp/Teams STUN/TURN
+    - 5222  # XMPP (WhatsApp)
+    - 5223  # Apple Push Notification
+    
+  # تشخیص پروتکل‌های مختلف
+  sniff:
+    HTTP:
+      ports: [80, 8080, 8880, 2052, 2082, 2086, 2095]
+      override-destination: false
+    TLS:
+      ports: [443, 8443, 2053, 2083, 2087, 2096]
+      override-destination: false
+    QUIC:
+      ports: [443, 8443]
+      override-destination: false
+      
+  # دامنه‌هایی که نباید sniff شوند (برای سرعت بیشتر)
+  skip-domain:
+    # سایت‌های ایرانی معروف - نیازی به بررسی ندارند
+    - "*.ir"
+    - "*.digikala.com"
+    - "*.mydigipay.com"
+    - "*.shaparak.ir"
+    - "*.bmi.ir"
+    - "*.bsi.ir"
+    - "*.parsian-bank.ir"
+    - "*.bankmellat.ir"
+    - "*.sb24.ir"
+    - "*.enbank.ir"
+    - "*.ttbank.ir"
+    - "*.edbi.ir"
+    - "*.ansarbank.com"
+    - "*.bim.ir"
+    - "*.refah-bank.ir"
+    - "*.ghbi.ir"
+    - "*.karafarinbank.ir"
+    - "*.sbank.ir"
+    - "*.shahr-bank.ir"
+    - "*.ba24.ir"
+    - "*.sinabank.ir"
+    - "*.postbank.ir"
+    - "*.eghtesadnovin.ir"
+    - "*.tourismbank.ir"
+    - "*.izbank.ir"
+    - "*.iranzamin.ir"
+    - "*.resalat-bank.ir"
+    - "*.qmb.ir"
+    - "*.rb24.ir"
+    - "*.agri-bank.com"
+    - "*.bank-maskan.ir"
+    - "*.blubank.ir"
+    - "*.digipay.ir"
+    - "*.mydigipay.com"
+    - "*.snapp.ir"
+    - "*.snapp.market"
+    - "*.snappfood.ir"
+    - "*.snapptrip.com"
+    - "*.snapp-box.com"
+    - "*.okala.com"
+    - "*.tapsi.ir"
+    - "*.tap30.ir"
+    - "*.alibaba.ir"
+    - "*.flightio.com"
+    - "*.divar.ir"
+    - "*.sheypoor.com"
+    - "*.torob.com"
+    - "*.emalls.ir"
+    - "*.basalam.com"
+    - "*.kilid.com"
+    - "*.bama.ir"
+    - "*.virgool.io"
+    - "*.zoomit.ir"
+    - "*.aparat.com"
+    - "*.telewebion.com"
+    - "*.namava.ir"
+    - "*.filimo.com"
+    - "*.cinematicket.org"
+    - "*.irancell.ir"
+    - "*.mci.ir"
+    - "*.rightel.ir"
+    - "*.shatel.ir"
+    - "*.mobinnet.ir"
+    - "*.asiatech.ir"
+    - "*.pishgaman.net"
+    - "*.parsonline.net"
+    - "*.datak.ir"
+    - "*.hi-web.ir"
+    - "*.respina.net"
+    
+    # سرویس‌های Apple - مشکل‌ساز در Sniffing
+    - "*.apple.com"
+    - "*.icloud.com"
+    - "*.icloud-content.com"
+    - "*.itunes.com"
+    - "*.me.com"
+    - "*.mzstatic.com"
+    - "*.cdn-apple.com"
+    - "*.apple-cloudkit.com"
+    - "*.apple-dns.net"
+    - "captive.apple.com"
+    
+    # سایت‌های محلی و شبکه داخلی
+    - "*.local"
+    - "*.localhost"
+    - "*.lan"
+    - "*.home"
+    - "*.arpa"
+    - "*.internal"
+    - "router.asus.com"
+    - "*.amplifi.lan"
+    - "*.router.synology.com"
+    
+    # CDN های معروف - معمولاً نیاز به بررسی ندارند
+    - "*.akamaiedge.net"
+    - "*.akamaihd.net"
+    - "*.cloudfront.net"
+    - "*.edgekey.net"
+    - "*.edgesuite.net"
+    - "*.fastly.net"
+    - "*.llnwd.net"
+    
+  # تشخیص پروتکل‌ها با الگوهای خاص
+  force-domain:
+    # شبکه‌های اجتماعی با IP مستقیم
+    - "+.facebook.com"
+    - "+.instagram.com"
+    - "+.whatsapp.com"
+    - "+.telegram.org"
+    - "+.twitter.com"
+    - "+.youtube.com"
+    - "+.tiktok.com"
+    - "+.linkedin.com"
+    - "+.pinterest.com"
+    - "+.reddit.com"
+    - "+.tumblr.com"
+    - "+.discord.com"
+    - "+.twitch.tv"
+    - "+.snapchat.com"
+    - "+.spotify.com"
+    - "+.netflix.com"
+    
+  # IP های خاص که باید حتماً بررسی شوند
+  force-ip-sni:
+    - "31.13.0.0/16"      # Facebook/Instagram/WhatsApp
+    - "66.220.0.0/16"     # Facebook
+    - "69.63.0.0/16"      # Facebook
+    - "74.119.76.0/22"    # Facebook
+    - "103.4.96.0/22"     # Facebook
+    - "129.134.0.0/16"    # Facebook
+    - "157.240.0.0/16"    # Facebook/Instagram
+    - "173.252.0.0/16"    # Facebook
+    - "179.60.192.0/22"   # Facebook
+    - "185.60.216.0/22"   # Facebook
+    - "204.15.20.0/22"    # Facebook
+    - "91.108.0.0/16"     # Telegram
+    - "149.154.0.0/16"    # Telegram
+    - "185.76.151.0/24"   # Telegram
+    - "2001:67c:4e8::/48" # Telegram IPv6
 
 # تنظیمات TUN
 tun:
   enable: true
   device: meta
-  mtu: 1280
-  stack: mixed
-  dns-hijack: [any:53, tcp://any:53, udp://any:53]
+  mtu: 1420  # افزایش MTU برای عملکرد بهتر
+  stack: system  # تغییر به system برای عملکرد بهتر
+  dns-hijack: 
+    - any:53  # Hijack همه DNS queries
   auto-route: true
   auto-detect-interface: true
   strict-route: true
   endpoint-independent-nat: true
-  route-address: [0.0.0.0/1, 128.0.0.0/1]
-  route-exclude-address: [192.168.0.0/16, 172.16.0.0/12, 10.0.0.0/8, 127.0.0.0/8, 169.254.0.0/16, 224.0.0.0/4, 255.255.255.255/32]
+  route-address: 
+    - 0.0.0.0/1
+    - 128.0.0.0/1
+    - ::/1
+    - 8000::/1
+  route-exclude-address: 
+    - 192.168.0.0/16
+    - 172.16.0.0/12
+    - 10.0.0.0/8
+    - 127.0.0.0/8
+    - 169.254.0.0/16
+    - 224.0.0.0/4
+    - 240.0.0.0/4
+    - 255.255.255.255/32
+    - fc00::/7
+    - fe80::/10
+    - ff00::/8
   include-uid: []
   exclude-uid: []
   include-uid-range: []
@@ -42,28 +237,152 @@ tun:
   include-package: []
   exclude-package: []
 
-# تنظیمات DNS
+# تنظیمات DNS - بازنگری کامل برای جلوگیری از نشتی
 dns:
   enable: true
   ipv6: false
-  prefer-h3: true
-  use-hosts: false
-  use-system-hosts: false
+  prefer-h3: false
+  use-hosts: true
+  use-system-hosts: false  # غیرفعال تا از hosts سیستم استفاده نکند
   respect-rules: true
   enhanced-mode: fake-ip
-  fake-ip-range: 28.0.0.1/8
-  fake-ip-filter: ["*.lan", "*.local", "*.localhost", "*.invalid", "*.test", "*.home.arpa", "*.example", "*.bogon", "router.asus.com", "hotspot.cslwifi.com", "amplifi.lan", "router.synology.com", "*.apple.com", "*.icloud.com"]
-  default-nameserver: [1.1.1.1, 8.8.8.8, 9.9.9.9]
-  proxy-server-nameserver: [1.1.1.1, 8.8.8.8, 9.9.9.9]
-  nameserver: [https://1.1.1.1/dns-query#h3=true, https://1.0.0.1/dns-query#h3=true, https://8.8.8.8/dns-query, https://9.9.9.9/dns-query, tls://1.1.1.1:853, tls://1.0.0.1:853]
-  fallback: [https://45.90.28.0/dns-query, https://45.90.30.0/dns-query, https://208.67.222.222/dns-query, tls://45.90.28.0:853, tls://45.90.30.0:853]
+  fake-ip-range: 198.18.0.1/16
+  
+  # دامنه‌هایی که نباید fake-ip بگیرند
+  fake-ip-filter:
+    - "*.ir"
+    - "+.ir"
+    - "*.ikco.ir"
+    - "*.esale.ikco.ir"
+    - "*.digikala.com"
+    - "*.snapp.ir"
+    - "*.tapsi.ir"
+    - "*.divar.ir"
+    - "*.sheypoor.com"
+    - "*.bmi.ir"
+    - "*.shaparak.ir"
+    - "*.bankmellat.ir"
+    - "*.sb24.ir"
+    - "*.bsi.ir"
+    - "*.parsian-bank.ir"
+    - "*.irancell.ir"
+    - "*.mci.ir"
+    - "*.rightel.ir"
+    - "*.lan"
+    - "*.local"
+    - "*.localhost"
+    - "*.home"
+    - "*.arpa"
+    - "*.test"
+    - "*.invalid"
+    - "*.example"
+    - "*.internal"
+    - "router.asus.com"
+    - "*.amplifi.lan"
+    - "*.router.synology.com"
+  
+  # DNS سرورهای پیش‌فرض (فقط برای bootstrap)
+  default-nameserver:
+    - 178.22.122.100  # Shecan
+    - 185.51.200.2    # Shecan
+  
+  # DNS برای حل آدرس پروکسی سرور (فقط IP)
+  proxy-server-nameserver:
+    - 178.22.122.100  # Shecan
+    - 185.51.200.2    # Shecan
+  
+  # DNS سرورهای اصلی - فقط گوگل و کلودفلر برای جلوگیری از نشتی
+  nameserver:
+    - 1.1.1.1
+    - 8.8.8.8
+  
+  # fallback DNS - برای دامنه‌های خارجی
+  fallback:
+    - https://dns.cloudflare.com/dns-query  # از طریق پروکسی
+    - https://dns.google/dns-query          # از طریق پروکسی
+    - tls://8.8.8.8:853                     # از طریق پروکسی
+    - tls://1.1.1.1:853                     # از طریق پروکسی
+  
+  # شرایط استفاده از fallback
   fallback-filter:
     geoip: true
     geoip-code: IR
-    domain: ['+.google.com', '+.facebook.com', '+.youtube.com', '+.githubusercontent.com', '+.googlevideo.com', '+.cloudflare.com']
-    ipcidr: [240.0.0.0/4, 0.0.0.0/32, 127.0.0.1/32, 192.168.0.0/16, 10.0.0.0/8, 172.16.0.0/12]
+    ipcidr:
+      - 0.0.0.0/8
+      - 10.0.0.0/8
+      - 100.64.0.0/10
+      - 127.0.0.0/8
+      - 169.254.0.0/16
+      - 172.16.0.0/12
+      - 192.0.0.0/24
+      - 192.0.2.0/24
+      - 192.168.0.0/16
+      - 198.18.0.0/15
+      - 198.51.100.0/24
+      - 203.0.113.0/24
+      - 224.0.0.0/4
+      - 240.0.0.0/4
+      - 255.255.255.255/32
+    domain:
+      - "+.google.com"
+      - "+.facebook.com"
+      - "+.youtube.com"
+      - "+.telegram.org"
+      - "+.twitter.com"
+      - "+.instagram.com"
+      - "+.netflix.com"
+  
+  # سیاست DNS برای دامنه‌های خاص
+  nameserver-policy:
+    # دامنه‌های ایرانی - فقط از Shecan
+    "+.ir": ["178.22.122.100", "185.51.200.2"]
+    "+.ikco.ir": ["178.22.122.100", "185.51.200.2"]
+    "+.digikala.com": ["178.22.122.100", "185.51.200.2"]
+    "+.snapp.ir": ["178.22.122.100", "185.51.200.2"]
+    "+.tapsi.ir": ["178.22.122.100", "185.51.200.2"]
+    "+.divar.ir": ["178.22.122.100", "185.51.200.2"]
+    "+.sheypoor.com": ["178.22.122.100", "185.51.200.2"]
+    "+.aparat.com": ["178.22.122.100", "185.51.200.2"]
+    "+.namava.ir": ["178.22.122.100", "185.51.200.2"]
+    "+.filimo.com": ["178.22.122.100", "185.51.200.2"]
+    "+.telewebion.com": ["178.22.122.100", "185.51.200.2"]
+    "+.bmi.ir": ["178.22.122.100", "185.51.200.2"]
+    "+.bankmellat.ir": ["178.22.122.100", "185.51.200.2"]
+    "+.shaparak.ir": ["178.22.122.100", "185.51.200.2"]
+    "+.irancell.ir": ["178.22.122.100", "185.51.200.2"]
+    "+.mci.ir": ["178.22.122.100", "185.51.200.2"]
+    "+.rightel.ir": ["178.22.122.100", "185.51.200.2"]
+    
+    # شبکه‌های محلی
+    "+.lan": "system"
+    "+.local": "system"
+    "+.localhost": "system"
+    "+.home": "system"
+    "+.arpa": "system"
+    
+    # دامنه‌های خارجی - از DoH/DoT استفاده کنند (از طریق پروکسی)
+    "+.google.com": ["https://dns.cloudflare.com/dns-query", "https://dns.google/dns-query"]
+    "+.googleapis.com": ["https://dns.cloudflare.com/dns-query", "https://dns.google/dns-query"]
+    "+.gstatic.com": ["https://dns.cloudflare.com/dns-query", "https://dns.google/dns-query"]
+    "+.youtube.com": ["https://dns.cloudflare.com/dns-query", "https://dns.google/dns-query"]
+    "+.ytimg.com": ["https://dns.cloudflare.com/dns-query", "https://dns.google/dns-query"]
+    "+.googlevideo.com": ["https://dns.cloudflare.com/dns-query", "https://dns.google/dns-query"]
+    "+.facebook.com": ["https://dns.cloudflare.com/dns-query", "https://dns.google/dns-query"]
+    "+.fbcdn.net": ["https://dns.cloudflare.com/dns-query", "https://dns.google/dns-query"]
+    "+.instagram.com": ["https://dns.cloudflare.com/dns-query", "https://dns.google/dns-query"]
+    "+.cdninstagram.com": ["https://dns.cloudflare.com/dns-query", "https://dns.google/dns-query"]
+    "+.twitter.com": ["https://dns.cloudflare.com/dns-query", "https://dns.google/dns-query"]
+    "+.twimg.com": ["https://dns.cloudflare.com/dns-query", "https://dns.google/dns-query"]
+    "+.telegram.org": ["https://dns.cloudflare.com/dns-query", "https://dns.google/dns-query"]
+    "+.t.me": ["https://dns.cloudflare.com/dns-query", "https://dns.google/dns-query"]
+    "+.netflix.com": ["https://dns.cloudflare.com/dns-query", "https://dns.google/dns-query"]
+    "+.nflxvideo.net": ["https://dns.cloudflare.com/dns-query", "https://dns.google/dns-query"]
+    "+.github.com": ["https://dns.cloudflare.com/dns-query", "https://dns.google/dns-query"]
+    "+.githubusercontent.com": ["https://dns.cloudflare.com/dns-query", "https://dns.google/dns-query"]
+    "+.cloudflare.com": ["https://dns.cloudflare.com/dns-query", "https://dns.google/dns-query"]
+    "+.cloudflare-dns.com": ["https://dns.cloudflare.com/dns-query", "https://dns.google/dns-query"]
 
-# پروکسی‌ها (اضافه کنید)
+# پروکسی‌ها - نمونه پروکسی‌ها (پروکسی خود را جایگزین کنید)
 proxies: []
 
 # گروه‌های پروکسی
@@ -75,6 +394,58 @@ proxy-groups:
 
 # قوانین مسیریابی
 rules:
+  # ===== قوانین DNS برای جلوگیری از نشتی =====
+  # DNS های Shecan (ایرانی) - حتماً مستقیم
+  - IP-CIDR,178.22.122.100/32,DIRECT,no-resolve
+  - IP-CIDR,185.51.200.2/32,DIRECT,no-resolve
+  
+  # همه DNS های دیگر روی پورت 53 - از پروکسی (جلوگیری از نشتی)
+  - DST-PORT,53,🌐 Proxy
+  
+  # DNS های خارجی معروف - اطمینان از عبور از پروکسی
+  - IP-CIDR,8.8.8.8/32,🌐 Proxy,no-resolve
+  - IP-CIDR,8.8.4.4/32,🌐 Proxy,no-resolve
+  - IP-CIDR,1.1.1.1/32,🌐 Proxy,no-resolve
+  - IP-CIDR,1.0.0.1/32,🌐 Proxy,no-resolve
+  - IP-CIDR,9.9.9.9/32,🌐 Proxy,no-resolve
+  - IP-CIDR,149.112.112.112/32,🌐 Proxy,no-resolve
+  - IP-CIDR,208.67.222.222/32,🌐 Proxy,no-resolve
+  - IP-CIDR,208.67.220.220/32,🌐 Proxy,no-resolve
+  - IP-CIDR,76.76.2.0/24,🌐 Proxy,no-resolve
+  - IP-CIDR,76.223.122.150/32,🌐 Proxy,no-resolve
+  - IP-CIDR,94.140.14.0/24,🌐 Proxy,no-resolve
+  - IP-CIDR,94.140.15.0/24,🌐 Proxy,no-resolve
+  - IP-CIDR,45.11.45.11/32,🌐 Proxy,no-resolve
+  - IP-CIDR,185.228.168.0/24,🌐 Proxy,no-resolve
+  - IP-CIDR,185.228.169.0/24,🌐 Proxy,no-resolve
+  - IP-CIDR,76.76.19.19/32,🌐 Proxy,no-resolve
+  - IP-CIDR,223.5.5.5/32,🌐 Proxy,no-resolve
+  - IP-CIDR,223.6.6.6/32,🌐 Proxy,no-resolve
+  - IP-CIDR,119.29.29.29/32,🌐 Proxy,no-resolve
+  - IP-CIDR,180.76.76.76/32,🌐 Proxy,no-resolve
+  # بلاک کردن رنج IP ایران (TIC - Tehran)
+  - IP-CIDR,2.188.0.0/16,REJECT,no-resolve
+  - IP-CIDR,2.188.21.0/24,REJECT,no-resolve
+  
+  # دامنه‌های DNS خارجی - از پروکسی
+  - DOMAIN,dns.google,🌐 Proxy
+  - DOMAIN,dns.google.com,🌐 Proxy
+  - DOMAIN,dns64.dns.google,🌐 Proxy
+  - DOMAIN-SUFFIX,dns.google,🌐 Proxy
+  - DOMAIN,cloudflare-dns.com,🌐 Proxy
+  - DOMAIN,one.one.one.one,🌐 Proxy
+  - DOMAIN,1dot1dot1dot1.cloudflare-dns.com,🌐 Proxy
+  - DOMAIN,dns.cloudflare.com,🌐 Proxy
+  - DOMAIN-SUFFIX,opendns.com,🌐 Proxy
+  - DOMAIN,dns.quad9.net,🌐 Proxy
+  - DOMAIN,dns.adguard.com,🌐 Proxy
+  - DOMAIN-SUFFIX,nextdns.io,🌐 Proxy
+  - DOMAIN,dns.alidns.com,🌐 Proxy
+  - DOMAIN,doh.pub,🌐 Proxy
+  - DOMAIN,dot.pub,🌐 Proxy
+  - DOMAIN-SUFFIX,doh.dns.sb,🌐 Proxy
+  
+  # ===== قوانین بلاک کردن تبلیغات و ردیاب‌ها =====
   - RULE-SET,iran-ads,REJECT
   - RULE-SET,global-ads,REJECT
   - RULE-SET,privacy-block,REJECT
@@ -82,6 +453,8 @@ rules:
   - RULE-SET,malware-block,REJECT
   - RULE-SET,mining-block,REJECT
   - RULE-SET,webrtc-block,REJECT
+  
+  # ===== سایت‌های ایرانی - مستقیم =====
   - RULE-SET,iran-direct,DIRECT
   - RULE-SET,iran-cidr,DIRECT
   - DOMAIN-SUFFIX,ir,DIRECT
@@ -90,20 +463,38 @@ rules:
   - DOMAIN-SUFFIX,org.ir,DIRECT
   - DOMAIN-SUFFIX,net.ir,DIRECT
   - DOMAIN-SUFFIX,co.ir,DIRECT
+  - DOMAIN-SUFFIX,sch.ir,DIRECT
   - DOMAIN-KEYWORD,digikala,DIRECT
   - DOMAIN-KEYWORD,snapp,DIRECT
   - DOMAIN-KEYWORD,divar,DIRECT
   - DOMAIN-KEYWORD,tapsi,DIRECT
   - DOMAIN-KEYWORD,sheypoor,DIRECT
+  - DOMAIN-KEYWORD,ikco,DIRECT
+  - DOMAIN-KEYWORD,saipa,DIRECT
+  - DOMAIN-KEYWORD,esale,DIRECT
+  - DOMAIN-KEYWORD,irancell,DIRECT
+  - DOMAIN-KEYWORD,hamraheaval,DIRECT
+  - DOMAIN-KEYWORD,mci,DIRECT
+  - DOMAIN-KEYWORD,rightel,DIRECT
+  - DOMAIN-KEYWORD,aparat,DIRECT
+  - DOMAIN-KEYWORD,filimo,DIRECT
+  - DOMAIN-KEYWORD,namava,DIRECT
+  - DOMAIN-KEYWORD,telewebion,DIRECT
   - GEOIP,IR,DIRECT
+  
+  # ===== بلاک کردن WebRTC (جلوگیری از نشتی IP) =====
   - DOMAIN,stun.l.google.com,REJECT
   - DOMAIN-SUFFIX,stun.services.mozilla.com,REJECT
   - DOMAIN-KEYWORD,stun,REJECT
   - DOMAIN-KEYWORD,webrtc,REJECT
+  
+  # ===== سایت‌های خارجی - از پروکسی =====
   - RULE-SET,telegram-proxy,🌐 Proxy
   - RULE-SET,streaming-proxy,🌐 Proxy
   - RULE-SET,social-proxy,🌐 Proxy
   - RULE-SET,google-proxy,🌐 Proxy
+  
+  # ===== شبکه‌های محلی - مستقیم =====
   - IP-CIDR,10.0.0.0/8,DIRECT,no-resolve
   - IP-CIDR,172.16.0.0/12,DIRECT,no-resolve
   - IP-CIDR,192.168.0.0/16,DIRECT,no-resolve
@@ -112,8 +503,12 @@ rules:
   - IP-CIDR,224.0.0.0/4,DIRECT,no-resolve
   - IP-CIDR,240.0.0.0/4,DIRECT,no-resolve
   - IP-CIDR,255.255.255.255/32,DIRECT,no-resolve
+  - IP-CIDR6,::1/128,DIRECT,no-resolve
+  - IP-CIDR6,fc00::/7,DIRECT,no-resolve
   - IP-CIDR6,fe80::/10,DIRECT,no-resolve
   - IP-CIDR6,fd00::/8,DIRECT,no-resolve
+  
+  # ===== قانون نهایی - همه چیز دیگر از پروکسی =====
   - MATCH,🌐 Proxy
 
 # Rule Providers

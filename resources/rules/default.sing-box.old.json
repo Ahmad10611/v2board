@@ -1,217 +1,174 @@
 {
     "dns": {
-        "servers": [
-            {
-                "type": "local",
-                "tag": "local"
-            },
-            {
-                "type": "udp",
-                "tag": "remote",
-                "server": "1.1.1.1"
-            },
-            {
-                "type": "udp",
-                "tag": "cn",
-                "server": "8.8.8.8"
-            }
-        ],
         "rules": [
+            {
+                "outbound": [
+                    "any"
+                ],
+                "server": "local"
+            }, 
+            {
+                "clash_mode": "پراکسی سراسری",
+                "server": "remote"
+            },
+            {
+                "clash_mode": "خاموش کردن پروکسی",
+                "server": "local"
+            },
             {
                 "rule_set": [
                     "geosite-ir"
                 ],
-                "action": "route",
-                "server": "cn"
-            },
-            {
-                "domain_suffix": [
-                    ".ir",
-                    ".xn--mgba3a4f16a"
-                ],
-                "action": "route",
-                "server": "cn"
-            }
-        ],
-        "final": "remote",
-        "strategy": "ipv4_only"
-    },
-    "inbounds": [
-        {
-            "tag": "tun-in",
-            "type": "tun",
-            "address": [
-                "172.19.0.1/30"
-            ],
-            "auto_route": true,
-            "mtu": 1400,
-            "stack": "gvisor",
-            "strict_route": false,
-            "route_exclude_address_set": ["geoip-ir"],
-            "sniff": true,
-            "sniff_override_destination": false,
-            "sniff_timeout": "100ms"
-        },
-        {
-            "tag": "socks-in",
-            "type": "socks",
-            "listen": "127.0.0.1",
-            "listen_port": 2333,
-            "users": [],
-            "tcp_keep_alive": "15m",
-            "tcp_fast_open": false,
-            "sniff": false
-        },
-        {
-            "tag": "mixed-in",
-            "type": "mixed",
-            "listen": "127.0.0.1",
-            "listen_port": 2334,
-            "users": [],
-            "tcp_keep_alive": "15m",
-            "tcp_fast_open": false,
-            "sniff": false
-        }
-    ],
-    "outbounds": [
-        {
-            "tag": "DIRECT",
-            "type": "direct",
-            "domain_resolver": {
-                "server": "cn"
-            },
-            "tcp_fast_open": false,
-            "tcp_multi_path": false
-        },
-        {
-            "tag": "دکتر‌موبایل‌جایزان",
-            "type": "selector",
-            "interrupt_exist_connections": false,
-            "outbounds": [
-                "انتخاب خودکار"
-            ]
-        },
-        {
-            "tag": "انتخاب خودکار",
-            "type": "urltest",
-            "url": "https://www.gstatic.com/generate_204",
-            "interval": "30m",
-            "tolerance": 50,
-            "idle_timeout": "60m",
-            "interrupt_exist_connections": false,
-            "outbounds": []
-        }
-    ],
-    "route": {
-        "rules": [
-            {
-                "action": "sniff",
-                "timeout": "100ms"
-            },
-            {
-                "protocol": "dns",
-                "action": "hijack-dns"
-            },
-            {
-                "domain": [
-                    "raw.githubusercontent.com",
-                    "github.com",
-                    "githubusercontent.com"
-                ],
-                "action": "route",
-                "outbound": "DIRECT"
+                "server": "local"
             },
             {
                 "rule_set": [
                     "category-ads-all"
                 ],
-                "action": "reject",
-                "method": "drop",
-                "no_drop": false
-            },
-            {
-                "ip_is_private": true,
-                "action": "route",
-                "outbound": "DIRECT"
-            },
-            {
-                "network": "udp",
-                "port": [
-                    123,
-                    53
-                ],
-                "action": "route",
-                "outbound": "DIRECT"
-            },
-            {
-                "clash_mode": "غیرفعال کردن پراکسی",
-                "action": "route",
-                "outbound": "DIRECT"
-            },
-            {
-                "clash_mode": "پراکسی سراسری",
-                "action": "route",
-                "outbound": "دکتر‌موبایل‌جایزان"
-            },
-            {
-                "rule_set": [
-                    "geosite-ir",
-                    "geoip-ir"
-                ],
-                "action": "route",
-                "outbound": "DIRECT"
-            },
-            {
-                "domain_suffix": [
-                    ".ir",
-                    ".xn--mgba3a4f16a"
-                ],
-                "action": "route",
-                "outbound": "DIRECT"
+                "server": "block"
             }
         ],
-        "auto_detect_interface": true,
-        "final": "دکتر‌موبایل‌جایزان",
-        "default_domain_resolver": {
-            "server": "cn"
-        },
-        "rule_set": [
+        "servers": [
             {
-                "tag": "geoip-ir",
-                "type": "remote",
-                "format": "binary",
-                "url": "https://raw.githubusercontent.com/Chocolate4U/Iran-sing-box-rules/rule-set/geoip-ir.srs",
-                "download_detour": "DIRECT",
-                "update_interval": "168h"
+                "address": "1.1.1.1",
+                "detour": "دکتر‌موبایل‌جایزان",
+                "tag": "remote"
             },
             {
-                "tag": "geosite-ir",
-                "type": "remote",
-                "format": "binary",
-                "url": "https://raw.githubusercontent.com/Chocolate4U/Iran-sing-box-rules/rule-set/geosite-ir.srs",
-                "download_detour": "DIRECT",
-                "update_interval": "168h"
+                "address": "8.8.8.8",
+                "detour": "direct",
+                "tag": "local"
             },
             {
-                "tag": "category-ads-all",
-                "type": "remote",
-                "format": "binary",
-                "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-category-ads-all.srs",
-                "download_detour": "DIRECT",
-                "update_interval": "168h"
+                "address": "rcode://refused",
+                "tag": "block"
             }
-        ]
+        ],
+        "final": "remote",
+        "strategy": "ipv4_only",
+        "disable_cache": false
     },
     "experimental": {
         "cache_file": {
-            "enabled": true,
-            "path": "cache.db",
-            "store_fakeip": false
+            "enabled": true
         },
         "clash_api": {
             "default_mode": "پراکسی بین‌المللی",
             "external_controller": "127.0.0.1:9090",
             "secret": ""
         }
+    },
+    "inbounds": [
+        {
+            "auto_route": true,
+            "domain_strategy": "prefer_ipv4",
+            "endpoint_independent_nat": true,
+            "address": [
+                "172.19.0.1/30",
+                "2001:0470:f9da:fdfa::1/64"
+            ],
+            "mtu": 9000,
+            "sniff_override_destination": true,
+            "stack": "system",
+            "strict_route": true,
+            "type": "tun"
+        },
+        {
+            "domain_strategy": "prefer_ipv4",
+            "listen": "127.0.0.1",
+            "listen_port": 2333,
+            "sniff": true,
+            "sniff_override_destination": true,
+            "tag": "socks-in",
+            "type": "socks",
+            "users": []
+        },
+        {
+            "domain_strategy": "prefer_ipv4",
+            "listen": "127.0.0.1",
+            "listen_port": 2334,
+            "sniff": true,
+            "sniff_override_destination": true,
+            "tag": "mixed-in",
+            "type": "mixed",
+            "users": []
+        }
+    ],
+    "outbounds": [
+        {
+            "type": "selector",
+            "tag": "دکتر‌موبایل‌جایزان",
+            "outbounds": [
+                "انتخاب خودکار"
+            ]
+        },
+        {
+            "type": "urltest",
+            "tag": "انتخاب خودکار",
+            "outbounds": []
+        },
+        {
+            "type": "direct",
+            "tag": "direct"
+        }
+    ],
+    "route": {
+        "auto_detect_interface": true,
+        "rules": [
+            {
+				"action": "sniff"
+			},
+			{
+				"protocol": "dns",
+				"action": "hijack-dns"
+			},
+			{
+                "clash_mode": "خاموش کردن پروکسی",
+                "outbound": "direct"
+            },
+            {
+                "clash_mode": "پراکسی سراسری",
+                "outbound": "دکتر‌موبایل‌جایزان"
+            },
+            {
+                "rule_set": [
+                    "geosite-ir","geoip-ir"
+                ],
+                "outbound": "direct"
+            },
+            {
+                "ip_is_private": true,
+                "outbound": "direct"
+            },
+            {
+                "rule_set": [
+                    "category-ads-all"
+                ],
+                "action": "reject"
+            }
+        ],
+        "rule_set": [
+            {
+              "tag": "geosite-ir",
+              "type": "remote",
+              "format": "binary",
+              "url": "https://raw.githubusercontent.com/Chocolate4U/Iran-sing-box-rules/rule-set/geosite-ir.srs",
+              "download_detour": "دکتر‌موبایل‌جایزان"
+            },
+            {
+                "tag": "category-ads-all",
+                "type": "remote",
+                "format": "binary",
+                "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-category-ads-all.srs",
+                "download_detour": "دکتر‌موبایل‌جایزان"
+            },
+            {
+                "tag": "geoip-ir",
+                "type": "remote",
+                "format": "binary",
+                "url": "https://raw.githubusercontent.com/Chocolate4U/Iran-sing-box-rules/rule-set/geoip-ir.srs",
+                "download_detour": "دکتر‌موبایل‌جایزان"
+            }
+        ]
     }
 }

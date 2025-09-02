@@ -13,47 +13,64 @@
             {
                 "type": "udp",
                 "tag": "cn",
-                "server": "223.5.5.5"
+                "server": "8.8.8.8"
             }
         ],
         "rules": [
             {
                 "rule_set": [
-                    "geosite-cn"
+                    "geosite-ir"
+                ],
+                "action": "route",
+                "server": "cn"
+            },
+            {
+                "domain_suffix": [
+                    ".ir",
+                    ".xn--mgba3a4f16a"
                 ],
                 "action": "route",
                 "server": "cn"
             }
         ],
-        "final": "remote"
+        "final": "remote",
+        "strategy": "ipv4_only"
     },
     "inbounds": [
         {
             "tag": "tun-in",
             "type": "tun",
             "address": [
-                "172.19.0.1/30",
-                "2001:0470:f9da:fdfa::1/64"
+                "172.19.0.1/30"
             ],
             "auto_route": true,
-            "mtu": 9000,
-            "stack": "system",
-            "strict_route": true,
-            "route_exclude_address_set": ["geoip-cn"]
+            "mtu": 1400,
+            "stack": "gvisor",
+            "strict_route": false,
+            "route_exclude_address_set": ["geoip-ir"],
+            "sniff": true,
+            "sniff_override_destination": false,
+            "sniff_timeout": "100ms"
         },
         {
             "tag": "socks-in",
             "type": "socks",
             "listen": "127.0.0.1",
             "listen_port": 2333,
-            "users": []
+            "users": [],
+            "tcp_keep_alive": "15m",
+            "tcp_fast_open": false,
+            "sniff": false
         },
         {
             "tag": "mixed-in",
             "type": "mixed",
             "listen": "127.0.0.1",
             "listen_port": 2334,
-            "users": []
+            "users": [],
+            "tcp_keep_alive": "15m",
+            "tcp_fast_open": false,
+            "sniff": false
         }
     ],
     "outbounds": [
@@ -61,24 +78,26 @@
             "tag": "DIRECT",
             "type": "direct",
             "domain_resolver": {
-                "server": "local"
-            }
+                "server": "cn"
+            },
+            "tcp_fast_open": false,
+            "tcp_multi_path": false
         },
         {
-            "tag": "节点选择",
+            "tag": "دکتر‌موبایل‌جایزان",
             "type": "selector",
-            "interrupt_exist_connections": true,
+            "interrupt_exist_connections": false,
             "outbounds": [
-                "自动选择"
+                "انتخاب خودکار"
             ]
         },
         {
-            "tag": "自动选择",
+            "tag": "انتخاب خودکار",
             "type": "urltest",
             "url": "https://www.gstatic.com/generate_204",
-            "interval": "10m",
+            "interval": "30m",
             "tolerance": 50,
-            "idle_timeout": "30m",
+            "idle_timeout": "60m",
             "interrupt_exist_connections": false,
             "outbounds": []
         }
@@ -86,18 +105,28 @@
     "route": {
         "rules": [
             {
-                "action": "sniff"
+                "action": "sniff",
+                "timeout": "100ms"
             },
             {
                 "protocol": "dns",
                 "action": "hijack-dns"
             },
             {
+                "domain": [
+                    "raw.githubusercontent.com",
+                    "github.com",
+                    "githubusercontent.com"
+                ],
+                "action": "route",
+                "outbound": "DIRECT"
+            },
+            {
                 "rule_set": [
                     "category-ads-all"
                 ],
                 "action": "reject",
-                "method": "default",
+                "method": "drop",
                 "no_drop": false
             },
             {
@@ -106,65 +135,81 @@
                 "outbound": "DIRECT"
             },
             {
-                "clash_mode": "关闭代理",
+                "network": "udp",
+                "port": [
+                    123,
+                    53
+                ],
                 "action": "route",
                 "outbound": "DIRECT"
             },
             {
-                "clash_mode": "全局代理",
+                "clash_mode": "غیرفعال کردن پراکسی",
                 "action": "route",
-                "outbound": "节点选择"
+                "outbound": "DIRECT"
+            },
+            {
+                "clash_mode": "پراکسی سراسری",
+                "action": "route",
+                "outbound": "دکتر‌موبایل‌جایزان"
             },
             {
                 "rule_set": [
-                    "geosite-cn","geoip-cn"
+                    "geosite-ir",
+                    "geoip-ir"
+                ],
+                "action": "route",
+                "outbound": "DIRECT"
+            },
+            {
+                "domain_suffix": [
+                    ".ir",
+                    ".xn--mgba3a4f16a"
                 ],
                 "action": "route",
                 "outbound": "DIRECT"
             }
         ],
         "auto_detect_interface": true,
-        "final": "节点选择",
+        "final": "دکتر‌موبایل‌جایزان",
         "default_domain_resolver": {
-            "server": "remote"
+            "server": "cn"
         },
         "rule_set": [
             {
-                "tag": "geosite-geolocation-!cn",
+                "tag": "geoip-ir",
                 "type": "remote",
                 "format": "binary",
-                "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-!cn.srs",
-                "download_detour": "节点选择"
+                "url": "https://raw.githubusercontent.com/Chocolate4U/Iran-sing-box-rules/rule-set/geoip-ir.srs",
+                "download_detour": "DIRECT",
+                "update_interval": "168h"
             },
             {
-                "tag": "geoip-cn",
+                "tag": "geosite-ir",
                 "type": "remote",
                 "format": "binary",
-                "url": "https://raw.githubusercontent.com/Loyalsoldier/geoip/release/srs/cn.srs",
-                "download_detour": "节点选择"
-            },
-            {
-                "tag": "geosite-cn",
-                "type": "remote",
-                "format": "binary",
-                "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-cn.srs",
-                "download_detour": "节点选择"
+                "url": "https://raw.githubusercontent.com/Chocolate4U/Iran-sing-box-rules/rule-set/geosite-ir.srs",
+                "download_detour": "DIRECT",
+                "update_interval": "168h"
             },
             {
                 "tag": "category-ads-all",
                 "type": "remote",
                 "format": "binary",
                 "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-category-ads-all.srs",
-                "download_detour": "节点选择"
+                "download_detour": "DIRECT",
+                "update_interval": "168h"
             }
         ]
     },
     "experimental": {
         "cache_file": {
-            "enabled": true
+            "enabled": true,
+            "path": "cache.db",
+            "store_fakeip": false
         },
         "clash_api": {
-            "default_mode": "海外代理",
+            "default_mode": "پراکسی بین‌المللی",
             "external_controller": "127.0.0.1:9090",
             "secret": ""
         }

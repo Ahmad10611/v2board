@@ -10,8 +10,8 @@ use App\Protocols\ClashMeta;
 use App\Services\ServerService;
 use App\Services\UserService;
 use App\Utils\Helper;
-use Illuminate\Http\Request;
 use Morilog\Jalali\Jalalian;
+use Illuminate\Http\Request;
 
 class ClientController extends Controller
 {
@@ -54,6 +54,7 @@ class ClientController extends Controller
             return $class->handle();
         }
     }
+
     private function setSubscribeInfoToServers(&$servers, $user)
     {
         if (!isset($servers[0])) return;
@@ -74,11 +75,6 @@ class ClientController extends Controller
         }
         array_unshift($servers, array_merge($servers[0], [
             'name' => "ترافیک：{$remainingTraffic}",
-        ]));
-    }
-}
-        array_unshift($servers, array_merge($servers[0], [
-            'name' => "剩余流量：{$remainingTraffic}",
         ]));
     }
 }

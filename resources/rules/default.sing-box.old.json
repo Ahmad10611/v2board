@@ -16,6 +16,31 @@
                 "server": "local"
             },
             {
+                "domain": [
+                    "gitlab.com",
+                    "gitlab.io",
+                    "gitlabusercontent.com",
+                    "apple.com",
+                    "icloud.com",
+                    "icloud-content.com",
+                    "apple-cloudkit.com",
+                    "apple.news",
+                    "applepaydisplay.com",
+                    "applepay.com",
+                    "aaplimg.com",
+                    "apple.co",
+                    "applemusic.com",
+                    "business.apple.com",
+                    "school.apple.com",
+                    "appleconnect.apple.com",
+                    "itunes.apple.com",
+                    "mzstatic.com",
+                    "cdn-apple.com",
+                    "apple-dns.net"
+                ],
+                "server": "local"
+            },
+            {
                 "rule_set": [
                     "geosite-ir"
                 ],
@@ -129,6 +154,14 @@
             {
                 "clash_mode": "پراکسی سراسری",
                 "outbound": "دکتر‌موبایل‌جایزان"
+            },
+            {
+                "domain": [
+                    "gitlab.com",
+                    "gitlab.io",
+                    "gitlabusercontent.com"
+                ],
+                "outbound": "direct"
             },
             {
                 "rule_set": [

@@ -1,7 +1,9 @@
-# port: 7890
-# socks-port: 7891
-# redir-port: 7892
-# tproxy-port: 7893
+port: 7890
+socks-port: 7891
+redir-port: 7892
+tproxy-port: 7893
+
+# General Settings
 mode: rule
 allow-lan: false
 bind-address: "*"
@@ -12,6 +14,7 @@ secret: "YourSecurePasswordHere!"
 tcp-concurrent: true
 find-process-mode: off
 
+# TUN Settings
 tun:
   enable: true
   device: meta
@@ -41,7 +44,8 @@ tun:
     - fc00::/7
     - fe80::/10
     - ff00::/8
-    
+
+# DNS Settings
 dns:
   enable: true
   ipv6: false
@@ -51,10 +55,8 @@ dns:
   respect-rules: true
   enhanced-mode: fake-ip
   fake-ip-range: 198.18.0.1/16
-  
   fake-ip-filter:
     - "*.ir"
-    - "+.ir"
     - "*.digikala.com"
     - "*.sheypoor.com"
     - "*.aparat.com"
@@ -72,14 +74,25 @@ dns:
     - "+.ytimg.com"
     - "+.fbcdn.net"
     - "+.facebook.com"
-    - "*.instagram.com"
-    - "*.cdninstagram.com"
-    - "+.cdninstagram.com"
     - "+.instagram.com"
+    - "+.cdninstagram.com"
     - "+.whatsapp.com"
     - "+.twitter.com"
+    - "+.twimg.com"
+    - "+.x.com"
     - "+.netflix.com"
+    - "+.nflxext.com"
+    - "+.nflximg.com"
+    - "+.nflxvideo.net"
+    - "+.youtube.com"
+    - "+.youtu.be"
     - "+.discord.com"
+    - "+.discordapp.com"
+    - "+.discordapp.net"
+    - "+.google.com"
+    - "+.googleapis.com"
+    - "+.gstatic.com"
+    - "+.googleusercontent.com"
     - "+.microsoft.com"
     - "+.apple.com"
     - "+.tiktok.com"
@@ -87,18 +100,14 @@ dns:
     - 10.202.10.10
     - 8.8.8.8
     - 1.1.1.1
-    
   proxy-server-nameserver:
     - 8.8.8.8
     - 1.1.1.1
-    
-  # Fallback DNS servers – اضافه کردن گزینه‌های بیشتر
   fallback:
     - tls://9.9.9.9:853
     - tls://208.67.222.222:853
     - 8.8.8.8
     - 1.1.1.1
-    
   fallback-filter:
     geoip: true
     geoip-code: IR
@@ -129,19 +138,15 @@ dns:
       - "+.googlevideo.com"
       - "+.ytimg.com"
       - "+.cdninstagram.com"
-      
   nameserver-policy:
-  
-    "+.ir": 
-      - 8.8.8.8
-      
-    # شبکه‌های محلی
-    "+.lan": "system"
-    "+.local": "system"
-    "+.localhost": "system"
-    "+.home": "system"
-    "+.arpa": "system"
+    "*.ir": 8.8.8.8
+    "*.lan": "system"
+    "*.local": "system"
+    "*.localhost": "system"
+    "*.home": "system"
+    "*.arpa": "system"
 
+# Sniffer Settings
 sniffer:
   enable: true
   sniff-tls-sni: true
@@ -153,15 +158,14 @@ sniffer:
     - 853
     - 5228
     - 5229
-    - 5230
     - 8888
     - 8889
-    - 3478
-    - 5222
     - 5223
     - 5349
-    - 19302
-    - 19305
+    - 27000-27030
+    - 19302-19305
+    - 3478-3480
+    - 5222-5230
   sniff:
     HTTP:
       ports: [80, 8080, 8880, 2052, 2082, 2086, 2095]
@@ -173,7 +177,6 @@ sniffer:
       ports: [443, 8443]
       override-destination: false
   skip-domain:
-    # سایت‌های ایرانی
     - "*.ir"
     - "*.digikala.com"
     - "*.mydigipay.com"
@@ -184,18 +187,15 @@ sniffer:
     - "*.telewebion.com"
     - "*.instagram.com"
     - "*.cdninstagram.com"
-    # سرویس‌های Apple
     - "*.apple.com"
     - "*.icloud.com"
     - "*.icloud-content.com"
-    # شبکه محلی
     - "*.local"
     - "*.localhost"
     - "*.lan"
     - "*.home"
     - "*.arpa"
     - "*.internal"
-    # CDN ها
     - "*.cloudfront.net"
     - "*.akamaiedge.net"
     - "*.akamaihd.net"
@@ -211,15 +211,16 @@ sniffer:
     - "+.netflix.com"
     - "+.spotify.com"
     - "+.discord.com"
-    
   force-ip-sni:
     - "31.13.0.0/16"
     - "157.240.0.0/16"
     - "91.108.0.0/16"
     - "149.154.0.0/16"
 
+# Proxy Settings
 proxies: []
 
+# Proxy Groups
 proxy-groups:
   - name: "💉دکتر‌موبایل‌جایزان"
     type: select
@@ -227,7 +228,6 @@ proxy-groups:
       - "🚀 خودکار 🚀"
       - "🚀 اولین سرور فعال 🚀"
       - "⚖️ متعادل‌سازی بار"
-
   - name: "🚀 خودکار 🚀"
     type: url-test
     proxies: []
@@ -239,7 +239,6 @@ proxy-groups:
       timeout: 1
       retries: 2
       fail-time: 1
-
   - name: "🚀 اولین سرور فعال 🚀"
     type: fallback
     proxies: []
@@ -251,7 +250,6 @@ proxy-groups:
       timeout: 1
       retries: 2
       fail-time: 1
-
   - name: "⚖️ متعادل‌سازی بار"
     type: load-balance
     strategy: consistent-hashing
@@ -265,298 +263,108 @@ proxy-groups:
       retries: 2
       fail-time: 1
 
+# Rules
 rules:
-  - DOMAIN-KEYWORD,amazon,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-KEYWORD,google,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-KEYWORD,gmail,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-KEYWORD,youtube,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-KEYWORD,facebook,💉دکتر‌موبایل‌جایزان
+  # Social Media and Streaming
+  - DOMAIN-SUFFIX,facebook.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,fb.me,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-KEYWORD,twitter,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-KEYWORD,dropbox,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,fbcdn.net,💉دکتر‌موبایل‌جایزان
+  - IP-CIDR,31.13.0.0/16,💉دکتر‌موبایل‌جایزان
+  - IP-CIDR,157.240.0.0/16,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,twitter.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,x.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,twimg.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-KEYWORD,blogspot,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,youtu.be,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-KEYWORD,whatsapp,💉دکتر‌موبایل‌جایزان
-  # 国外网站
   - DOMAIN-SUFFIX,instagram.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,cdninstagram.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-KEYWORD,instagram,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,fbcdn.net,💉دکتر‌موبایل‌جایزان
-  
+  - DOMAIN-SUFFIX,whatsapp.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,youtube.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,ytimg.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,googlevideo.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,youtu.be,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,netflix.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,nflxext.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,nflximg.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,nflxvideo.net,💉دکتر‌موبایل‌جایزان
+  - PROCESS-NAME,Netflix,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,discord.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,discordapp.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,discordapp.net,💉دکتر‌موبایل‌جایزان
+  - UDP-DST-PORT,3478-3497,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,telegram.org,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,tiktok.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,spotify.com,💉دکتر‌موبایل‌جایزان
+
+  # Tech and Productivity
+  - DOMAIN-SUFFIX,google.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,googleapis.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,gstatic.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,microsoft.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,office.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,office365.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,onenote.com,💉دکتر‌موبایل‌جایزان
+  - IP-CIDR,13.0.0.0/8,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,apple.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,icloud.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,icloud-content.com,💉دکتر‌موبایل‌جایزان
+  - IP-CIDR,17.0.0.0/8,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,zoom.us,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,zoom.com,💉دکتر‌موبایل‌جایزان
+  - UDP-DST-PORT,8801-8810,💉دکتر‌موبایل‌جایزان
+  - PROCESS-NAME,zoom,💉دکتر‌موبایل‌جایزان
+
+  # Gaming
+  - DOMAIN-SUFFIX,steam.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,steampowered.com,💉دکتر‌موبایل‌جایزان
+  - UDP-DST-PORT,27000-27030,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,epicgames.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,epicgames.dev,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,easyanticheat.net,💉دکتر‌موبایل‌جایزان
+
+  # Other Websites
   - DOMAIN-SUFFIX,9to5mac.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,abpchina.org,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,adblockplus.org,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,adobe.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,akamaized.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,alfredapp.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,amplitude.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,ampproject.org,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,android.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,angularjs.org,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,aolcdn.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,apkpure.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,appledaily.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,appshopper.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,appspot.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,arcgis.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,archive.org,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,armorgames.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,aspnetcdn.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,att.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,awsstatic.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,azureedge.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,azurewebsites.net,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,bing.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,bintray.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,bit.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,bit.ly,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,bitbucket.org,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,bjango.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,bkrtx.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,blog.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,blogcdn.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,blogger.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,blogsmithmedia.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,blogspot.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,blogspot.hk,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,bloomberg.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,box.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,box.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,cachefly.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,chromium.org,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,cl.ly,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,cloudflare.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,cloudfront.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,cloudmagic.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,cmail19.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,cnet.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,cocoapods.org,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,comodoca.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,crashlytics.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,culturedcode.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,d.pr,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,danilo.to,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,dayone.me,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,db.tt,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,deskconnect.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,disq.us,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,disqus.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,disquscdn.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,dnsimple.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,docker.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,dribbble.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,droplr.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,duckduckgo.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,dueapp.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,dytt8.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,edgecastcdn.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,edgekey.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,edgesuite.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,engadget.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,entrust.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,eurekavpt.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,dropbox.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,evernote.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,fabric.io,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,fast.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,fastly.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,fc2.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,feedburner.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,feedly.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,feedsportal.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,fiftythree.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,firebaseio.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,flexibits.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,flickr.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,flipboard.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,g.co,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,gabia.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,geni.us,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,gfx.ms,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,ggpht.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,ghostnoteapp.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,git.io,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-KEYWORD,github,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,globalsign.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,gmodules.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,godaddy.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,golang.org,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,gongm.in,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,goo.gl,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,goodreaders.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,goodreads.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,gravatar.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,gstatic.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,gvt0.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,hockeyapp.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,hotmail.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,icons8.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,ifixit.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,ift.tt,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,ifttt.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,iherb.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,imageshack.us,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,img.ly,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,imgur.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,imore.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,instapaper.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,ipn.li,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,is.gd,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,issuu.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,itgonglun.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,itun.es,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,ixquick.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,j.mp,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,js.revsci.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,jshint.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,jtvnw.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,justgetflux.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,kat.cr,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,klip.me,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,libsyn.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,github.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,linkedin.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,line-apps.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,linode.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,lithium.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,littlehj.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,live.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,live.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,livefilestore.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,llnwd.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,macid.co,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,macromedia.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,macrumors.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,mashable.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,mathjax.org,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,medium.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,mega.co.nz,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,mega.nz,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,megaupload.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,microsofttranslator.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,mindnode.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,mobile01.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,modmyi.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,msedge.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,myfontastic.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,name.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,nextmedia.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,nsstatic.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,nssurge.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,nyt.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,nytimes.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,omnigroup.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,onedrive.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,onenote.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,ooyala.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,openvpn.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,openwrt.org,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,orkut.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,osxdaily.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,outlook.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,ow.ly,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,paddleapi.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,parallels.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,parse.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,pdfexpert.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,periscope.tv,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,pinboard.in,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,pinterest.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,pixelmator.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,pixiv.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,playpcesor.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,playstation.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,playstation.com.hk,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,playstation.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,playstationnetwork.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,pushwoosh.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,rime.im,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,servebom.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,sfx.ms,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,shadowsocks.org,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,sharethis.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,shazam.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,skype.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,smartdns💉دکتر‌موبایل‌جایزان.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,smartmailcloud.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,sndcdn.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,sony.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,soundcloud.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,sourceforge.net,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,spotify.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,squarespace.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,sstatic.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,st.luluku.pw,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,stackoverflow.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,startpage.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,staticflickr.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,steamcommunity.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,symauth.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,symcb.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,symcd.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,tapbots.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,tapbots.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,tdesktop.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,techcrunch.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,techsmith.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,thepiratebay.org,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,theverge.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,time.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,timeinc.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,tiny.cc,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,tinypic.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,tmblr.co,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,todoist.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,trello.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,trustasiassl.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,tumblr.co,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,tumblr.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,tweetdeck.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,tweetmarker.net,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,twitch.tv,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,txmblr.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,typekit.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,ubertags.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,ublock.org,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,ubnt.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,ulyssesapp.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,urchin.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,usertrust.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,v.gd,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,v2ex.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,vimeo.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,vimeocdn.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,vine.co,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,vivaldi.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,vox-cdn.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,vsco.co,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,vultr.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,w.org,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,w3schools.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,webtype.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,wikiwand.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,wikileaks.org,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,wikimedia.org,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,wikipedia.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,wikipedia.org,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,windows.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,windows.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,wire.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,wordpress.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,workflowy.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,wp.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,wsj.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,wsj.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,xda-developers.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,xeeno.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,xiti.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,yahoo.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,yimg.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,ying.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,yoyo.org,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,ytimg.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,netflix.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,discord.com,💉دکتر‌موبایل‌جایزان
 
+  # Block WebRTC to prevent IP leaks
+  - DOMAIN,stun.l.google.com,REJECT
+  - DOMAIN-SUFFIX,stun.services.mozilla.com,REJECT
+  - DOMAIN-KEYWORD,stun,REJECT
+  - DOMAIN-KEYWORD,webrtc,REJECT
+  - RULE-SET,webrtc-block,REJECT
+
+  # Rule Sets
   - RULE-SET,ir,DIRECT
   - RULE-SET,ircidr,DIRECT
   - RULE-SET,irasn,DIRECT
@@ -564,21 +372,11 @@ rules:
   - RULE-SET,malware,REJECT
   - RULE-SET,phishing,REJECT
   - RULE-SET,cryptominers,REJECT
-  
-  - IP-CIDR,31.13.0.0/16,💉دکتر‌موبایل‌جایزان
-  - IP-CIDR,157.240.0.0/16,💉دکتر‌موبایل‌جایزان
-  - IP-CIDR,17.0.0.0/8,PROXY  # Apple IP range
-  - IP-CIDR,13.0.0.0/8,PROXY  # Microsoft IP range
-  
-  # ===== بلاک کردن WebRTC (جلوگیری از نشتی IP) =====
-  - DOMAIN,stun.l.google.com,REJECT
-  - DOMAIN-SUFFIX,stun.services.mozilla.com,REJECT
-  - DOMAIN-KEYWORD,stun,REJECT
-  - DOMAIN-KEYWORD,webrtc,REJECT
-  - RULE-SET,webrtc-block,REJECT
 
+  # Default Rule
   - MATCH,💉دکتر‌موبایل‌جایزان
 
+# Rule Providers
 rule-providers:
   ir:
     type: http
@@ -613,7 +411,7 @@ rule-providers:
     format: yaml
     behavior: domain
     url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/cryptominers.yaml"
-    path: ./ruleset/cryptominers.yaml"
+    path: ./ruleset/cryptominers.yaml
     interval: 86400
   ircidr:
     type: http
@@ -629,7 +427,7 @@ rule-providers:
     url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/irasn.yaml"
     path: ./ruleset/irasn.yaml
     interval: 86400
-  webrtc-block: 
+  webrtc-block:
     type: http
     behavior: domain
     format: yaml

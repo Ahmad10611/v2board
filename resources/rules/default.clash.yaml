@@ -76,6 +76,13 @@ dns:
     - "*.cdninstagram.com"
     - "+.cdninstagram.com"
     - "+.instagram.com"
+    - "+.whatsapp.com"
+    - "+.twitter.com"
+    - "+.netflix.com"
+    - "+.discord.com"
+    - "+.microsoft.com"
+    - "+.apple.com"
+    - "+.tiktok.com"
   default-nameserver:
     - 10.202.10.10
     - 8.8.8.8
@@ -152,6 +159,9 @@ sniffer:
     - 3478
     - 5222
     - 5223
+    - 5349
+    - 19302
+    - 19305
   sniff:
     HTTP:
       ports: [80, 8080, 8880, 2052, 2082, 2086, 2095]
@@ -200,6 +210,7 @@ sniffer:
     - "+.tiktok.com"
     - "+.netflix.com"
     - "+.spotify.com"
+    - "+.discord.com"
     
   force-ip-sni:
     - "31.13.0.0/16"
@@ -543,6 +554,8 @@ rules:
   - DOMAIN-SUFFIX,ying.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,yoyo.org,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,ytimg.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,netflix.com,💉دکتر‌موبایل‌جایزان
+  - DOMAIN-SUFFIX,discord.com,💉دکتر‌موبایل‌جایزان
 
   - RULE-SET,ir,DIRECT
   - RULE-SET,ircidr,DIRECT
@@ -554,6 +567,8 @@ rules:
   
   - IP-CIDR,31.13.0.0/16,💉دکتر‌موبایل‌جایزان
   - IP-CIDR,157.240.0.0/16,💉دکتر‌موبایل‌جایزان
+  - IP-CIDR,17.0.0.0/8,PROXY  # Apple IP range
+  - IP-CIDR,13.0.0.0/8,PROXY  # Microsoft IP range
   
   # ===== بلاک کردن WebRTC (جلوگیری از نشتی IP) =====
   - DOMAIN,stun.l.google.com,REJECT

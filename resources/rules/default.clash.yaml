@@ -289,7 +289,6 @@ rules:
   - DOMAIN-SUFFIX,discord.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,discordapp.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,discordapp.net,💉دکتر‌موبایل‌جایزان
-  - UDP-DST-PORT,3478-3497,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,telegram.org,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,tiktok.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,spotify.com,💉دکتر‌موبایل‌جایزان
@@ -309,13 +308,11 @@ rules:
   - IP-CIDR,17.0.0.0/8,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,zoom.us,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,zoom.com,💉دکتر‌موبایل‌جایزان
-  - UDP-DST-PORT,8801-8810,💉دکتر‌موبایل‌جایزان
   - PROCESS-NAME,zoom,💉دکتر‌موبایل‌جایزان
 
   # Gaming
   - DOMAIN-SUFFIX,steam.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,steampowered.com,💉دکتر‌موبایل‌جایزان
-  - UDP-DST-PORT,27000-27030,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,epicgames.com,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,epicgames.dev,💉دکتر‌موبایل‌جایزان
   - DOMAIN-SUFFIX,easyanticheat.net,💉دکتر‌موبایل‌جایزان

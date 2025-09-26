@@ -1,35 +1,49 @@
+# Clash Ultra Premium Configuration
+# بهینه شده برای کاربران ایرانی - Iranian Users Optimized
+# سازگار با iOS 15+ (Clash Mi) و Android (Clash Meta)
+# Version: 3.1 - DNS های سازگار با ایران
+# Features: Auto-Switch, Smart DNS, Gaming Mode, Streaming, Battery Saver
+
+# === Basic Settings ===
 port: 7890
 socks-port: 7891
-redir-port: 7892
-tproxy-port: 7893
-
-mode: rule
+# mixed-port: 7892  # اختیاری - اگر نیاز دارید uncomment کنید
 allow-lan: false
-bind-address: "*"
-log-level: info
-ipv6: false
-external-controller: 127.0.0.1:9090
-tcp-concurrent: true
-find-process-mode: off
+mode: rule
+log-level: warning  # info for debug
 
+# === Performance Profile ===
+profile:
+  store-selected: true
+  store-fake-ip: true
+  tracing: false  # Enable for debugging
+
+# === Advanced TCP/UDP ===
+tcp-concurrent: true  # iOS 15+ supports this
+unified-delay: true  # Better server testing
+keep-alive-interval: 120
+find-process-mode: off  # Save battery
+global-client-fingerprint: chrome
+
+# === TUN Configuration (Advanced) ===
 tun:
   enable: true
-  device: meta
-  mtu: 1420
-  stack: gvisor
-  dns-hijack:
+  device: meta            # امن‌ترین گزینه برای موبایل (نه utun)
+  stack: gvisor           # پایدار و سبک روی iOS / Android
+  mtu: 1420               # مقدار مناسب برای جلوگیری از قطع و وصل
+  dns-hijack:             # رهگیری همه درخواست‌های DNS
     - any:53
     - tcp://any:53
-  auto-route: true
+  auto-route: true        # روت کردن خودکار ترافیک
   auto-detect-interface: true
-  strict-route: true
-  endpoint-independent-nat: true
-  route-address:
+  strict-route: true      # جلوگیری از DNS/Traffic Leak
+  endpoint-independent-nat: true  # مهم برای UDP و بازی‌های آنلاین
+  route-address:          # پوشش کامل IPv4 و IPv6
     - 0.0.0.0/1
     - 128.0.0.0/1
     - ::/1
     - 8000::/1
-  route-exclude-address:
+  route-exclude-address:  # فقط شبکه‌های خصوصی/رزرو شده (مشکل‌ساز نیستند)
     - 192.168.0.0/16
     - 172.16.0.0/12
     - 10.0.0.0/8
@@ -42,333 +56,717 @@ tun:
     - fe80::/10
     - ff00::/8
 
-# DNS Settings
+# === Smart DNS Configuration ===
 dns:
   enable: true
   ipv6: false
-  prefer-h3: false
-  use-hosts: false
-  use-system-hosts: false
-  respect-rules: true
   enhanced-mode: fake-ip
-  fake-ip-range: 198.18.0.1/16
+  fake-ip-range: 28.0.0.1/8
+  fake-ip-filter-mode: whitelist
   fake-ip-filter:
-    - "*.ir"
-    - "*.digikala.com"
-    - "*.sheypoor.com"
-    - "*.aparat.com"
-    - "*.filimo.com"
-    - "*.telewebion.com"
+    # دامنه‌های محلی
     - "*.lan"
     - "*.local"
     - "*.localhost"
-    - "*.home"
-    - "*.arpa"
-    - "router.asus.com"
-    - "*.amplifi.lan"
-    - "*.router.synology.com"
-    - "+.googlevideo.com"
-    - "+.ytimg.com"
-    - "+.fbcdn.net"
-    - "+.facebook.com"
-    - "+.instagram.com"
-    - "+.cdninstagram.com"
-    - "+.whatsapp.com"
-    - "+.twitter.com"
-    - "+.twimg.com"
-    - "+.x.com"
-    - "+.netflix.com"
-    - "+.nflxext.com"
-    - "+.nflximg.com"
-    - "+.nflxvideo.net"
-    - "+.youtube.com"
-    - "+.youtu.be"
-    - "+.discord.com"
-    - "+.discordapp.com"
-    - "+.discordapp.net"
-    - "+.google.com"
-    - "+.googleapis.com"
-    - "+.gstatic.com"
-    - "+.googleusercontent.com"
-    - "+.microsoft.com"
+    - "*.home.arpa"
+    # Apple services - حساس به IP
     - "+.apple.com"
-    - "+.tiktok.com"
+    - "+.icloud.com"
+    - "+.icloud-content.com"
+    - "+.mzstatic.com"
+    - "+.apple-dns.net"
+    # سایت‌های ایرانی - نیاز به IP واقعی
+    - "+.ir"
+    - "+.digikala.com"
+    - "+.shaparak.ir"
+    - "+.mydigipay.com"
+    - "+.snapp.ir"
+    - "+.snapp.market"
+    - "+.tapsi.ir"
+    - "+.filimo.com"
+    - "+.aparat.com"
+    - "+.telewebion.com"
+    - "+.namava.ir"
+    - "+.bazaar.ir"
+    - "+.cafebazaar.ir"
+    - "+.sheypoor.com"
+    - "+.divar.ir"
+    # سرویس‌های بانکی ایران
+    - "+.bmi.ir"
+    - "+.bankmellat.ir"
+    - "+.bpi.ir"
+    - "+.bki.ir"
+    - "+.sb24.ir"
+    - "+.sapp.ir"
+    - "+.shaparak.ir"
+    # سرویس‌های دولتی
+    - "+.gov.ir"
+    - "+.dolat.ir"
+    - "+.e-gov.ir"
+  cache-algorithm: arc  # Advanced caching
+  use-hosts: true
+  use-system-hosts: true
+  
+  # Smart DNS Chain - بهینه برای ایران
   default-nameserver:
-    - 10.202.10.10
     - 8.8.8.8
     - 1.1.1.1
-  proxy-server-nameserver:
-    - 8.8.8.8
-    - 1.1.1.1
+    - 9.9.9.9
+    - 208.67.222.222
+  
+  # Primary nameservers (کار می‌کنند در ایران)
+  nameserver:
+    - 8.8.8.8  # Google Public DNS
+    - 8.8.4.4  # Google Secondary
+    - 1.1.1.1  # Cloudflare
+    - 1.0.0.1  # Cloudflare Secondary
+    - 9.9.9.9  # Quad9
+    - 208.67.222.222  # OpenDNS
+    - 208.67.220.220  # OpenDNS Secondary
+    - tls://8.8.8.8:853  # Google DoT
+    - tls://1.1.1.1:853  # Cloudflare DoT
+  
+  # Fallback chain (DNS های پشتیبان)
   fallback:
-    - tls://9.9.9.9:853
-    - tls://208.67.222.222:853
-    - 8.8.8.8
-    - 1.1.1.1
+    - 185.51.200.2  # Shecan DNS
+    - 178.22.122.100  # Shecan Secondary
+    - 94.232.174.194  # 403 DNS
+    - 10.202.10.10  # MCI Internal
+    - 10.202.10.11  # MCI Secondary
+    - 4.2.2.4  # Level3 DNS
+  
   fallback-filter:
     geoip: true
     geoip-code: IR
     ipcidr:
-      - 0.0.0.0/8
       - 10.0.0.0/8
-      - 100.64.0.0/10
       - 127.0.0.0/8
-      - 169.254.0.0/16
       - 172.16.0.0/12
-      - 192.0.0.0/24
-      - 192.0.2.0/24
       - 192.168.0.0/16
-      - 198.18.0.0/15
-      - 198.51.100.0/24
-      - 203.0.113.0/24
+      - 0.0.0.0/8
+      - 100.64.0.0/10
+      - 169.254.0.0/16
       - 224.0.0.0/4
       - 240.0.0.0/4
-      - 255.255.255.255/32
     domain:
-      - "+.google.com"
-      - "+.facebook.com"
-      - "+.youtube.com"
-      - "+.telegram.org"
-      - "+.twitter.com"
-      - "+.instagram.com"
-      - "+.netflix.com"
-      - "+.googlevideo.com"
-      - "+.ytimg.com"
-      - "+.cdninstagram.com"
+      - "+.ir"
+      - "+.digikala.com"
+      - "+.shaparak.ir"
+      - "+.mydigipay.com"
+      - "+.snapp.ir"
+      - "+.tapsi.ir"
+      - "+.filimo.com"
+      - "+.aparat.com"
+      - "+.telewebion.com"
+      - "+.gov.ir"
+  
+  # Policy-based DNS routing - بهینه برای ایران
   nameserver-policy:
-    "*.ir": 8.8.8.8
-    "*.lan": "system"
-    "*.local": "system"
-    "*.localhost": "system"
-    "*.home": "system"
-    "*.arpa": "system"
+    # Gaming DNS (کمترین تاخیر)
+    "*.epicgames.com": 
+      - 8.8.8.8
+      - 1.1.1.1
+    "*.steam.com":
+      - 8.8.8.8
+      - 1.1.1.1
+    "*.pubg.com":
+      - 8.8.8.8
+      - 1.1.1.1
+    # Streaming DNS (بهینه CDN)
+    "*.netflix.com":
+      - 8.8.8.8
+      - 8.8.4.4
+    "*.youtube.com":
+      - 8.8.8.8
+      - 8.8.4.4
+    "*.googlevideo.com":
+      - 8.8.8.8
+      - 8.8.4.4
+    # سایت‌های فیلتر شده در ایران
+    "*.twitter.com":
+      - 8.8.8.8
+      - 1.1.1.1
+    "*.x.com":
+      - 8.8.8.8
+      - 1.1.1.1
+    "*.facebook.com":
+      - 8.8.8.8
+      - 1.1.1.1
+    "*.instagram.com":
+      - 8.8.8.8
+      - 1.1.1.1
+    "*.telegram.org":
+      - 8.8.8.8
+      - 1.1.1.1
+    # Apple services (system DNS)
+    "+.apple.com": system
+    "+.icloud.com": system
+    "+.apple-dns.net": system
+    # سایت‌های ایرانی (DNS داخلی)
+    "+.ir": 
+      - 185.51.200.2  # Shecan
+      - 178.22.122.100
+      - 10.202.10.10  # MCI
+    "+.digikala.com": 
+      - 185.51.200.2
+      - 10.202.10.10
+    "+.shaparak.ir": 
+      - 10.202.10.10
+      - 185.51.200.2
+    "+.mydigipay.com":
+      - 10.202.10.10
+      - 185.51.200.2
+    "+.snapp.ir":
+      - 185.51.200.2
+      - 10.202.10.10
+    "+.tapsi.ir":
+      - 185.51.200.2
+      - 10.202.10.10
+    "+.filimo.com":
+      - 185.51.200.2
+      - 10.202.10.10
+    "+.aparat.com":
+      - 185.51.200.2
+      - 10.202.10.10
+    "+.telewebion.com":
+      - 185.51.200.2
+      - 10.202.10.10
+    # Local domains
+    "+.lan": system
+    "+.local": system
+    "+.localhost": system
 
-# Sniffer Settings
+# === Advanced Sniffer ===
 sniffer:
   enable: true
-  sniff-tls-sni: true
-  port-whitelist:
-    - 80
-    - 443
-    - 8080
-    - 8443
-    - 853
-    - 5228
-    - 5229
-    - 8888
-    - 8889
-    - 5223
-    - 5349
-    - 27000-27030
-    - 19302-19305
-    - 3478-3480
-    - 5222-5230
+  parse-pure-ip: true
+  override-destination: false
   sniff:
-    HTTP:
-      ports: [80, 8080, 8880, 2052, 2082, 2086, 2095]
-      override-destination: false
     TLS:
-      ports: [443, 8443, 2053, 2083, 2087, 2096]
+      ports: [443, 8443]
+      override-destination: false
+    HTTP:
+      ports: [80, 8080, 8880]
       override-destination: false
     QUIC:
       ports: [443, 8443]
       override-destination: false
-  skip-domain:
-    - "*.ir"
-    - "*.digikala.com"
-    - "*.mydigipay.com"
-    - "*.snapp.market"
-    - "*.sheypoor.com"
-    - "*.aparat.com"
-    - "*.filimo.com"
-    - "*.telewebion.com"
-    - "*.instagram.com"
-    - "*.cdninstagram.com"
-    - "*.apple.com"
-    - "*.icloud.com"
-    - "*.icloud-content.com"
-    - "*.local"
-    - "*.localhost"
-    - "*.lan"
-    - "*.home"
-    - "*.arpa"
-    - "*.internal"
-    - "*.cloudfront.net"
-    - "*.akamaiedge.net"
-    - "*.akamaihd.net"
-    - "*.fastly.net"
   force-domain:
+    - "+.google.com"
     - "+.facebook.com"
-    - "+.instagram.com"
-    - "+.whatsapp.com"
-    - "+.telegram.org"
-    - "+.twitter.com"
     - "+.youtube.com"
-    - "+.tiktok.com"
-    - "+.netflix.com"
-    - "+.spotify.com"
-    - "+.discord.com"
-  force-ip-sni:
-    - "31.13.0.0/16"
-    - "157.240.0.0/16"
-    - "91.108.0.0/16"
-    - "149.154.0.0/16"
+  skip-domain:
+    - "+.apple.com"
+    - "+.ir"
 
-# Proxy Settings
+# === Proxy Providers ===
+proxy-providers:
+  # اینجا subscription های خودتون رو اضافه کنید
+  # all-servers:
+  #   type: http
+  #   url: "YOUR_SUBSCRIPTION_URL"
+  #   interval: 86400
+  #   health-check:
+  #     enable: true
+  #     interval: 300
+  #     lazy: false
+  #     url: http://cp.cloudflare.com/generate_204
+
+# === Manual Proxies ===
 proxies: []
+# مثال برای اضافه کردن دستی:
+# - name: "🇺🇸 US-Server"
+#   type: ss
+#   server: 1.2.3.4
+#   port: 443
+#   cipher: aes-256-gcm
+#   password: "password"
+#   udp: true
 
-# Proxy Groups
+# === Proxy Groups (Advanced) ===
 proxy-groups:
-  - name: "💉دکتر‌موبایل‌جایزان"
+  # === Main Selector ===
+  - name: "🚀 انتخاب پروکسی"
     type: select
     proxies:
-      - "🚀 خودکار 🚀"
-      - "🚀 اولین سرور فعال 🚀"
-      - "⚖️ متعادل‌سازی بار"
-  - name: "🚀 خودکار 🚀"
+      - "🌐 حالت خودکار"
+      - "🎮 حالت گیمینگ"
+      - "🎬 حالت استریمینگ"
+      - "🔋 حالت ذخیره باتری"
+      - "⚡ حالت سرعت"
+      - "🌍 انتخاب دستی"
+      - "DIRECT"
+    # use:
+    #   - all-servers
+
+  # === Auto Mode (Smart Selection) ===
+  - name: "🌐 حالت خودکار"
     type: url-test
     proxies: []
-    url: "http://www.gstatic.com/generate_204"
-    interval: 1200
-    lazy: true
-    health-check:
-      enable: true
-      timeout: 1
-      retries: 2
-      fail-time: 1
-  - name: "🚀 اولین سرور فعال 🚀"
-    type: fallback
+    # use:
+    #   - all-servers
+    url: http://cp.cloudflare.com/generate_204
+    interval: 120
+    tolerance: 30
+    lazy: false
+
+  # === Gaming Mode (Low Latency) ===
+  - name: "🎮 حالت گیمینگ"
+    type: url-test
     proxies: []
-    url: "http://www.gstatic.com/generate_204"
-    interval: 1200
-    lazy: true
-    health-check:
-      enable: true
-      timeout: 1
-      retries: 2
-      fail-time: 1
-  - name: "⚖️ متعادل‌سازی بار"
+    # use:
+    #   - all-servers
+    # filter: "香港|新加坡|日本|HK|SG|JP|Game|Gaming|游戏"
+    url: http://cp.cloudflare.com/generate_204
+    interval: 60
+    tolerance: 20
+    lazy: false
+
+  # === Streaming Mode (High Bandwidth) ===
+  - name: "🎬 حالت استریمینگ"
     type: load-balance
     strategy: consistent-hashing
     proxies: []
-    url: "http://www.gstatic.com/generate_204"
-    interval: 6400
+    # use:
+    #   - all-servers
+    # filter: "美国|US|Netflix|Stream|流媒体"
+    url: http://cp.cloudflare.com/generate_204
+    interval: 180
     lazy: true
-    health-check:
-      enable: true
-      timeout: 1
-      retries: 2
-      fail-time: 1
 
-# Rules
+  # === Battery Saver Mode ===
+  - name: "🔋 حالت ذخیره باتری"
+    type: fallback
+    proxies: []
+    # use:
+    #   - all-servers
+    url: http://cp.cloudflare.com/generate_204
+    interval: 600
+    lazy: true
+
+  # === Speed Mode (Multi-connection) ===
+  - name: "⚡ حالت سرعت"
+    type: load-balance
+    strategy: round-robin
+    proxies: []
+    # use:
+    #   - all-servers
+    url: http://cp.cloudflare.com/generate_204
+    interval: 120
+    lazy: false
+
+  # === Manual Selection ===
+  - name: "🌍 انتخاب دستی"
+    type: select
+    proxies:
+      - "DIRECT"
+      - "REJECT"
+    # use:
+    #   - all-servers
+
+  # === Regional Groups ===
+  - name: "🇺🇸 آمریکا"
+    type: url-test
+    proxies: []
+    # filter: "🇺🇸|美国|洛杉矶|US|United States"
+    # use:
+    #   - all-servers
+    url: http://cp.cloudflare.com/generate_204
+    interval: 300
+
+  - name: "🇪🇺 اروپا"
+    type: url-test
+    proxies: []
+    # filter: "🇬🇧|🇩🇪|🇫🇷|德国|英国|法国|Europe"
+    # use:
+    #   - all-servers
+    url: http://cp.cloudflare.com/generate_204
+    interval: 300
+
+  - name: "🌏 آسیا"
+    type: url-test
+    proxies: []
+    # filter: "🇸🇬|🇯🇵|🇰🇷|新加坡|日本|韩国|Asia"
+    # use:
+    #   - all-servers
+    url: http://cp.cloudflare.com/generate_204
+    interval: 300
+
+  # === Service-Specific Groups ===
+  - name: "📱 شبکه‌های اجتماعی"
+    type: select
+    proxies:
+      - "🌐 حالت خودکار"
+      - "⚡ حالت سرعت"
+      - "🌍 انتخاب دستی"
+      - "DIRECT"
+
+  - name: "🎬 استریمینگ"
+    type: select
+    proxies:
+      - "🎬 حالت استریمینگ"
+      - "🇺🇸 آمریکا"
+      - "⚡ حالت سرعت"
+      - "🌍 انتخاب دستی"
+
+  - name: "🎮 گیمینگ"
+    type: select
+    proxies:
+      - "🎮 حالت گیمینگ"
+      - "🌏 آسیا"
+      - "🌍 انتخاب دستی"
+      - "DIRECT"
+
+  - name: "💼 سرویس‌های کاری"
+    type: select
+    proxies:
+      - "🌐 حالت خودکار"
+      - "🔋 حالت ذخیره باتری"
+      - "🌍 انتخاب دستی"
+      - "DIRECT"
+
+  - name: "🍎 Apple"
+    type: select
+    proxies:
+      - "DIRECT"
+      - "🌐 حالت خودکار"
+      - "🇺🇸 آمریکا"
+
+  - name: "🌍 سایت‌های خارجی"
+    type: select
+    proxies:
+      - "🌐 حالت خودکار"
+      - "⚡ حالت سرعت"
+      - "🔋 حالت ذخیره باتری"
+      - "🌍 انتخاب دستی"
+      - "DIRECT"
+
+  - name: "🇮🇷 سایت‌های ایرانی"
+    type: select
+    proxies:
+      - "DIRECT"
+      - "🌍 انتخاب دستی"
+      - "REJECT"
+
+  - name: "🏦 بانک‌های ایران"
+    type: select
+    proxies:
+      - "DIRECT"
+      - "REJECT"
+
+  - name: "🛡️ بلاک تبلیغات"
+    type: select
+    proxies:
+      - "REJECT"
+      - "DIRECT"
+
+  - name: "🐟 نهایی"
+    type: select
+    proxies:
+      - "🚀 انتخاب پروکسی"
+      - "DIRECT"
+      - "REJECT"
+
+# === Advanced Rules ===
 rules:
-  # Social Media and Streaming
-  - DOMAIN-SUFFIX,facebook.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,fb.me,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,fbcdn.net,💉دکتر‌موبایل‌جایزان
-  - IP-CIDR,31.13.0.0/16,💉دکتر‌موبایل‌جایزان
-  - IP-CIDR,157.240.0.0/16,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,twitter.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,x.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,twimg.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,instagram.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,cdninstagram.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,whatsapp.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,youtube.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,ytimg.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,googlevideo.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,youtu.be,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,netflix.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,nflxext.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,nflximg.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,nflxvideo.net,💉دکتر‌موبایل‌جایزان
-  - PROCESS-NAME,Netflix,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,discord.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,discordapp.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,discordapp.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,telegram.org,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,tiktok.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,spotify.com,💉دکتر‌موبایل‌جایزان
+  # === LAN & Local ===
+  - DOMAIN-SUFFIX,local,DIRECT
+  - DOMAIN-SUFFIX,localhost,DIRECT
+  - IP-CIDR,127.0.0.0/8,DIRECT,no-resolve
+  - IP-CIDR,10.0.0.0/8,DIRECT,no-resolve
+  - IP-CIDR,172.16.0.0/12,DIRECT,no-resolve
+  - IP-CIDR,192.168.0.0/16,DIRECT,no-resolve
+  - IP-CIDR,169.254.0.0/16,DIRECT,no-resolve
+  - IP-CIDR6,::1/128,DIRECT,no-resolve
+  - IP-CIDR6,fc00::/7,DIRECT,no-resolve
+  - IP-CIDR6,fe80::/10,DIRECT,no-resolve
 
-  # Tech and Productivity
-  - DOMAIN-SUFFIX,google.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,googleapis.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,gstatic.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,microsoft.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,office.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,office365.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,onenote.com,💉دکتر‌موبایل‌جایزان
-  - IP-CIDR,13.0.0.0/8,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,apple.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,icloud.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,icloud-content.com,💉دکتر‌موبایل‌جایزان
-  - IP-CIDR,17.0.0.0/8,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,zoom.us,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,zoom.com,💉دکتر‌موبایل‌جایزان
-  - PROCESS-NAME,zoom,💉دکتر‌موبایل‌جایزان
+  # === Gaming Rules (Priority) ===
+  - DOMAIN-KEYWORD,epicgames,🎮 گیمینگ
+  - DOMAIN-KEYWORD,steam,🎮 گیمینگ
+  - DOMAIN-KEYWORD,xbox,🎮 گیمینگ
+  - DOMAIN-KEYWORD,playstation,🎮 گیمینگ
+  - DOMAIN-KEYWORD,nintendo,🎮 گیمینگ
+  - DOMAIN-SUFFIX,pubg.com,🎮 گیمینگ
+  - DOMAIN-SUFFIX,pubgmobile.com,🎮 گیمینگ
+  - DOMAIN-SUFFIX,igamecj.com,🎮 گیمینگ
+  - DOMAIN-SUFFIX,playbattlegrounds.com,🎮 گیمینگ
+  - DOMAIN-SUFFIX,epicgames.com,🎮 گیمینگ
+  - DOMAIN-SUFFIX,easyanticheat.net,🎮 گیمینگ
+  - DOMAIN-SUFFIX,fortnite.com,🎮 گیمینگ
+  - DOMAIN-SUFFIX,unrealengine.com,🎮 گیمینگ
+  - DOMAIN-SUFFIX,steampowered.com,🎮 گیمینگ
+  - DOMAIN-SUFFIX,steamcontent.com,🎮 گیمینگ
+  - DOMAIN-SUFFIX,steamusercontent.com,🎮 گیمینگ
+  - DOMAIN-SUFFIX,valve.net,🎮 گیمینگ
+  - DOMAIN-SUFFIX,dota2.com,🎮 گیمینگ
+  - DOMAIN-SUFFIX,csgo.com,🎮 گیمینگ
+  - DOMAIN-SUFFIX,respawn.com,🎮 گیمینگ
+  - DOMAIN-SUFFIX,ea.com,🎮 گیمینگ
+  - DOMAIN-SUFFIX,blizzard.com,🎮 گیمینگ
+  - DOMAIN-SUFFIX,battle.net,🎮 گیمینگ
+  - DOMAIN-SUFFIX,riotgames.com,🎮 گیمینگ
+  - DOMAIN-SUFFIX,leagueoflegends.com,🎮 گیمینگ
+  - DOMAIN-SUFFIX,valorant.com,🎮 گیمینگ
+  # Gaming ports
+  - DST-PORT,3074,🎮 گیمینگ
+  - DST-PORT,3075,🎮 گیمینگ
+  - DST-PORT,3076,🎮 گیمینگ
+  - DST-PORT,3077,🎮 گیمینگ
+  - DST-PORT,3078,🎮 گیمینگ
+  - DST-PORT,3079,🎮 گیمینگ
+  - DST-PORT,27015,🎮 گیمینگ
+  - DST-PORT,27036,🎮 گیمینگ
 
-  # Gaming
-  - DOMAIN-SUFFIX,steam.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,steampowered.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,epicgames.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,epicgames.dev,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,easyanticheat.net,💉دکتر‌موبایل‌جایزان
+  # === Apple Services ===
+  - DOMAIN-SUFFIX,apple.com,🍎 Apple
+  - DOMAIN-SUFFIX,icloud.com,🍎 Apple
+  - DOMAIN-SUFFIX,icloud-content.com,🍎 Apple
+  - DOMAIN-SUFFIX,mzstatic.com,🍎 Apple
+  - DOMAIN-SUFFIX,aaplimg.com,🍎 Apple
+  - DOMAIN-SUFFIX,cdn-apple.com,🍎 Apple
+  - DOMAIN-SUFFIX,apple-cloudkit.com,🍎 Apple
+  - DOMAIN-SUFFIX,apple-mapkit.com,🍎 Apple
+  - DOMAIN-SUFFIX,itunes.com,🍎 Apple
+  - DOMAIN-SUFFIX,me.com,🍎 Apple
+  - IP-CIDR,17.0.0.0/8,🍎 Apple,no-resolve
+  - IP-CIDR,63.92.224.0/19,🍎 Apple,no-resolve
+  - IP-CIDR,65.199.22.0/23,🍎 Apple,no-resolve
+  - IP-CIDR,139.178.128.0/18,🍎 Apple,no-resolve
+  - IP-CIDR,144.178.0.0/19,🍎 Apple,no-resolve
+  - IP-CIDR,192.35.50.0/24,🍎 Apple,no-resolve
 
-  # Other Websites
-  - DOMAIN-SUFFIX,9to5mac.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,adobe.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,akamaized.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,android.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,apkpure.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,archive.org,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,awsstatic.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,azureedge.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,bing.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,bitbucket.org,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,blogger.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,blogspot.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,bloomberg.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,box.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,cloudflare.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,cloudfront.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,docker.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,dropbox.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,evernote.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,fastly.net,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,flickr.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,github.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,linkedin.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,nytimes.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,pinterest.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,playstation.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,soundcloud.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,spotify.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,stackoverflow.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,tumblr.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,twitch.tv,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,vimeo.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,wikipedia.org,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,wordpress.com,💉دکتر‌موبایل‌جایزان
-  - DOMAIN-SUFFIX,yahoo.com,💉دکتر‌موبایل‌جایزان
+  # === Ads & Analytics Block ===
+  - DOMAIN-KEYWORD,googleads,🛡️ بلاک تبلیغات
+  - DOMAIN-KEYWORD,doubleclick,🛡️ بلاک تبلیغات
+  - DOMAIN-KEYWORD,adserver,🛡️ بلاک تبلیغات
+  - DOMAIN-KEYWORD,analytics,🛡️ بلاک تبلیغات
+  - DOMAIN-SUFFIX,googlesyndication.com,🛡️ بلاک تبلیغات
+  - DOMAIN-SUFFIX,googletagmanager.com,🛡️ بلاک تبلیغات
+  - DOMAIN-SUFFIX,google-analytics.com,🛡️ بلاک تبلیغات
+  - DOMAIN-SUFFIX,googleadservices.com,🛡️ بلاک تبلیغات
+  - DOMAIN-SUFFIX,adsystem.com,🛡️ بلاک تبلیغات
+  - DOMAIN-SUFFIX,adsafeprotected.com,🛡️ بلاک تبلیغات
+  - DOMAIN-SUFFIX,adsrvr.org,🛡️ بلاک تبلیغات
+  - DOMAIN-SUFFIX,adnxs.com,🛡️ بلاک تبلیغات
+  - DOMAIN-SUFFIX,amplitude.com,🛡️ بلاک تبلیغات
+  - DOMAIN-SUFFIX,appsflyer.com,🛡️ بلاک تبلیغات
+  - DOMAIN-SUFFIX,adjust.com,🛡️ بلاک تبلیغات
+  - DOMAIN-SUFFIX,firebase.com,🛡️ بلاک تبلیغات
+  - DOMAIN-SUFFIX,crashlytics.com,🛡️ بلاک تبلیغات
 
-  # Block WebRTC to prevent IP leaks
-  - DOMAIN,stun.l.google.com,REJECT
-  - DOMAIN-SUFFIX,stun.services.mozilla.com,REJECT
-  - DOMAIN-KEYWORD,stun,REJECT
+  # === Streaming Services (Optimized) ===
+  - DOMAIN-SUFFIX,youtube.com,🎬 استریمینگ
+  - DOMAIN-SUFFIX,youtu.be,🎬 استریمینگ
+  - DOMAIN-SUFFIX,ytimg.com,🎬 استریمینگ
+  - DOMAIN-SUFFIX,googlevideo.com,🎬 استریمینگ
+  - DOMAIN-SUFFIX,youtube-nocookie.com,🎬 استریمینگ
+  - DOMAIN-SUFFIX,ggpht.com,🎬 استریمینگ
+  - DOMAIN-KEYWORD,youtube,🎬 استریمینگ
+  - DOMAIN-SUFFIX,netflix.com,🎬 استریمینگ
+  - DOMAIN-SUFFIX,nflxext.com,🎬 استریمینگ
+  - DOMAIN-SUFFIX,nflximg.com,🎬 استریمینگ
+  - DOMAIN-SUFFIX,nflxvideo.net,🎬 استریمینگ
+  - DOMAIN-SUFFIX,nflxso.net,🎬 استریمینگ
+  - DOMAIN-KEYWORD,netflix,🎬 استریمینگ
+  - DOMAIN-SUFFIX,spotify.com,🎬 استریمینگ
+  - DOMAIN-SUFFIX,scdn.co,🎬 استریمینگ
+  - DOMAIN-SUFFIX,spotifycdn.com,🎬 استریمینگ
+  - DOMAIN-KEYWORD,spotify,🎬 استریمینگ
+  - DOMAIN-SUFFIX,twitch.tv,🎬 استریمینگ
+  - DOMAIN-SUFFIX,ttvnw.net,🎬 استریمینگ
+  - DOMAIN-SUFFIX,jtvnw.net,🎬 استریمینگ
+  - DOMAIN-SUFFIX,twitchcdn.net,🎬 استریمینگ
+  - DOMAIN-SUFFIX,disney.com,🎬 استریمینگ
+  - DOMAIN-SUFFIX,disneyplus.com,🎬 استریمینگ
+  - DOMAIN-SUFFIX,disney-plus.net,🎬 استریمینگ
+  - DOMAIN-SUFFIX,dssott.com,🎬 استریمینگ
+  - DOMAIN-SUFFIX,hbo.com,🎬 استریمینگ
+  - DOMAIN-SUFFIX,hbogo.com,🎬 استریمینگ
+  - DOMAIN-SUFFIX,hbomax.com,🎬 استریمینگ
+  - DOMAIN-SUFFIX,hulu.com,🎬 استریمینگ
+  - DOMAIN-SUFFIX,huluim.com,🎬 استریمینگ
+  - DOMAIN-SUFFIX,hulustream.com,🎬 استریمینگ
+  - DOMAIN-SUFFIX,prime-video.com,🎬 استریمینگ
+  - DOMAIN-SUFFIX,primevideo.com,🎬 استریمینگ
+  - DOMAIN-SUFFIX,amazonvideo.com,🎬 استریمینگ
+  - DOMAIN-SUFFIX,soundcloud.com,🎬 استریمینگ
+  - DOMAIN-SUFFIX,sndcdn.com,🎬 استریمینگ
 
-  # Rule Sets
-  - RULE-SET,ir,DIRECT
-  - RULE-SET,ircidr,DIRECT
-  - RULE-SET,irasn,DIRECT
-  - RULE-SET,ads,REJECT
-  - RULE-SET,malware,REJECT
-  - RULE-SET,phishing,REJECT
-  - RULE-SET,cryptominers,REJECT
+  # === Social Media ===
+  - DOMAIN-SUFFIX,facebook.com,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,fb.me,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,fbcdn.net,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,instagram.com,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,cdninstagram.com,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,whatsapp.com,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,whatsapp.net,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,twitter.com,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,x.com,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,twimg.com,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,telegram.org,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,t.me,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,telegram.me,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,telegra.ph,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,linkedin.com,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,reddit.com,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,redditmedia.com,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,redditstatic.com,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,redd.it,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,tiktok.com,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,tiktokcdn.com,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,tiktokv.com,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,pinterest.com,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,pinimg.com,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,snapchat.com,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,discord.com,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,discordapp.com,📱 شبکه‌های اجتماعی
+  - DOMAIN-SUFFIX,discordapp.net,📱 شبکه‌های اجتماعی
+  - IP-CIDR,31.13.0.0/16,📱 شبکه‌های اجتماعی,no-resolve
+  - IP-CIDR,157.240.0.0/16,📱 شبکه‌های اجتماعی,no-resolve
+  - IP-CIDR,91.108.0.0/16,📱 شبکه‌های اجتماعی,no-resolve
+  - IP-CIDR,149.154.0.0/16,📱 شبکه‌های اجتماعی,no-resolve
 
-  # Default Rule
-  - MATCH,💉دکتر‌موبایل‌جایزان
+  # === Work & Productivity ===
+  - DOMAIN-SUFFIX,microsoft.com,💼 سرویس‌های کاری
+  - DOMAIN-SUFFIX,office.com,💼 سرویس‌های کاری
+  - DOMAIN-SUFFIX,office365.com,💼 سرویس‌های کاری
+  - DOMAIN-SUFFIX,windows.net,💼 سرویس‌های کاری
+  - DOMAIN-SUFFIX,microsoftonline.com,💼 سرویس‌های کاری
+  - DOMAIN-SUFFIX,outlook.com,💼 سرویس‌های کاری
+  - DOMAIN-SUFFIX,live.com,💼 سرویس‌های کاری
+  - DOMAIN-SUFFIX,skype.com,💼 سرویس‌های کاری
+  - DOMAIN-SUFFIX,teams.microsoft.com,💼 سرویس‌های کاری
+  - DOMAIN-SUFFIX,sharepoint.com,💼 سرویس‌های کاری
+  - DOMAIN-SUFFIX,onedrive.com,💼 سرویس‌های کاری
+  - DOMAIN-SUFFIX,zoom.us,💼 سرویس‌های کاری
+  - DOMAIN-SUFFIX,zoom.com,💼 سرویس‌های کاری
+  - DOMAIN-SUFFIX,zoomus.cn,💼 سرویس‌های کاری
+  - DOMAIN-SUFFIX,slack.com,💼 سرویس‌های کاری
+  - DOMAIN-SUFFIX,slack-edge.com,💼 سرویس‌های کاری
+  - DOMAIN-SUFFIX,notion.so,💼 سرویس‌های کاری
+  - DOMAIN-SUFFIX,notion.com,💼 سرویس‌های کاری
+  - DOMAIN-SUFFIX,dropbox.com,💼 سرویس‌های کاری
+  - DOMAIN-SUFFIX,dropboxusercontent.com,💼 سرویس‌های کاری
+  - DOMAIN-SUFFIX,github.com,💼 سرویس‌های کاری
+  - DOMAIN-SUFFIX,githubusercontent.com,💼 سرویس‌های کاری
+  - DOMAIN-SUFFIX,gitlab.com,💼 سرویس‌های کاری
+  - DOMAIN-SUFFIX,githubassets.com,💼 سرویس‌های کاری
 
-# Rule Providers
+  # === Foreign Websites ===
+  - DOMAIN-SUFFIX,google.com,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,googleapis.com,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,gstatic.com,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,googleusercontent.com,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,chrome.com,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,android.com,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,gmail.com,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,bing.com,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,duckduckgo.com,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,wikipedia.org,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,wikimedia.org,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,amazon.com,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,amazonaws.com,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,ebay.com,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,paypal.com,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,cloudflare.com,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,cloudfront.net,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,akamaized.net,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,fastly.net,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,wordpress.com,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,wp.com,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,blogspot.com,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,blogger.com,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,medium.com,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,stackoverflow.com,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,stackexchange.com,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,quora.com,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,adobe.com,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,oracle.com,🌍 سایت‌های خارجی
+  - DOMAIN-SUFFIX,salesforce.com,🌍 سایت‌های خارجی
+  - DOMAIN-KEYWORD,cdninstagram,🌍 سایت‌های خارجی
+  - DOMAIN-KEYWORD,instagram,🌍 سایت‌های خارجی
+  # === Iranian Sites & Banks (Direct) ===
+  - DOMAIN-SUFFIX,ir,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-KEYWORD,iran,🇮🇷 سایت‌های ایرانی
+  # پلتفرم‌های ایرانی
+  - DOMAIN-SUFFIX,digikala.com,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,dkstatics.com,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,digikalacloud.com,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,digistyle.com,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,digipay.com,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,mydigipay.com,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,sheypoor.com,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,divar.ir,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,aparat.com,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,filimo.com,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,telewebion.com,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,namava.ir,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,snapp.ir,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,snapp.market,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,snappfood.ir,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,snapp-box.com,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,tapsi.ir,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,tapsi.cab,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,alibaba.ir,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,bazaar.ir,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,cafebazaar.ir,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,torob.com,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,emalls.ir,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,zoomit.ir,🇮🇷 سایت‌های ایرانی
+  # بانک‌های ایرانی - حتماً DIRECT
+  - DOMAIN-SUFFIX,bmi.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,bankmellat.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,bpi.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,bki.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,bank-maskan.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,sb24.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,sapp.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,shaparak.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,sep.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,ecd.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,cbi.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,ansarbank.com,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,ba24.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,banksepah.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,edbi.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,bim.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,tourism-bank.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,izbank.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,ghbi.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,enbank.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,parsian-bank.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,karafarinbank.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,shahr-bank.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,sinabank.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,postbank.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,ttbank.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,rb24.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,rqbank.ir,🏦 بانک‌های ایران
+  - DOMAIN-SUFFIX,qmb.ir,🏦 بانک‌های ایران
+  # اپراتورهای ایرانی
+  - DOMAIN-SUFFIX,mci.ir,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,irancell.ir,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,rightel.ir,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,shatel.ir,🇮🇷 سایت‌های ایرانی
+  - DOMAIN-SUFFIX,asiatech.ir,🇮🇷 سایت‌های ایرانی
+
+  # === Iranian Sites IP Ranges ===
+  - IP-CIDR,2.144.0.0/14,🇮🇷 سایت‌های ایرانی,no-resolve
+  - IP-CIDR,5.22.0.0/15,🇮🇷 سایت‌های ایرانی,no-resolve
+  - IP-CIDR,5.52.0.0/14,🇮🇷 سایت‌های ایرانی,no-resolve
+  - IP-CIDR,5.72.0.0/13,🇮🇷 سایت‌های ایرانی,no-resolve
+  - IP-CIDR,31.7.64.0/18,🇮🇷 سایت‌های ایرانی,no-resolve
+  - IP-CIDR,37.129.0.0/16,🇮🇷 سایت‌های ایرانی,no-resolve
+  - IP-CIDR,37.156.0.0/14,🇮🇷 سایت‌های ایرانی,no-resolve
+  - IP-CIDR,78.38.0.0/15,🇮🇷 سایت‌های ایرانی,no-resolve
+  - IP-CIDR,81.91.128.0/17,🇮🇷 سایت‌های ایرانی,no-resolve
+  - IP-CIDR,185.208.172.0/22,🇮🇷 سایت‌های ایرانی,no-resolve
+
+  # === Final Rule ===
+  - MATCH,🐟 نهایی
+
+# === Rule Providers (Optional) ===
 rule-providers:
   ir:
     type: http
@@ -391,31 +789,23 @@ rule-providers:
     url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/malware.yaml"
     path: ./ruleset/malware.yaml
     interval: 86400
-  phishing:
-    type: http
-    format: yaml
-    behavior: domain
-    url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/phishing.yaml"
-    path: ./ruleset/phishing.yaml
-    interval: 86400
-  cryptominers:
-    type: http
-    format: yaml
-    behavior: domain
-    url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/cryptominers.yaml"
-    path: ./ruleset/cryptominers.yaml
-    interval: 86400
-  ircidr:
-    type: http
-    format: yaml
-    behavior: ipcidr
-    url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/ircidr.yaml"
-    path: ./ruleset/ircidr.yaml
-    interval: 86400
-  irasn:
-    type: http
-    format: yaml
-    behavior: classical
-    url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/irasn.yaml"
-    path: ./ruleset/irasn.yaml
-    interval: 86400
+
+# === راهنمای کاربران ایرانی ===
+# 
+# DNS های استفاده شده:
+# - Google (8.8.8.8, 8.8.4.4) - اصلی
+# - Cloudflare (1.1.1.1, 1.0.0.1) - سریع
+# - Quad9 (9.9.9.9) - امن
+# - OpenDNS (208.67.222.222) - پایدار
+# - Shecan (185.51.200.2, 178.22.122.100) - برای سایت‌های ایرانی
+# - MCI Internal (10.202.10.10) - برای سایت‌های داخلی
+#
+# نکات مهم:
+# 1. سایت‌های بانکی و دولتی ایران حتماً DIRECT هستند
+# 2. DNS های DoH و DoT در ایران ممکنه کند یا فیلتر باشند
+# 3. برای سایت‌های ایرانی از DNS داخلی استفاده می‌شود
+# 4. در صورت مشکل DNS، از 8.8.8.8 یا 1.1.1.1 استفاده کنید
+#
+# نحوه افزودن سرور:
+# در بخش proxies سرورهای خود را اضافه کنید
+# سپس نام آن‌ها را در proxy-groups مربوطه قرار دهید

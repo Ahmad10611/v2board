@@ -1,49 +1,41 @@
-# Clash Ultra Premium Configuration
-# بهینه شده برای کاربران ایرانی - Iranian Users Optimized
-# سازگار با iOS 15+ (Clash Mi) و Android (Clash Meta)
-# Version: 3.1 - DNS های سازگار با ایران
-# Features: Auto-Switch, Smart DNS, Gaming Mode, Streaming, Battery Saver
-
-# === Basic Settings ===
 port: 7890
 socks-port: 7891
-# mixed-port: 7892  # اختیاری - اگر نیاز دارید uncomment کنید
 allow-lan: false
 mode: rule
-log-level: warning  # info for debug
+log-level: warning
 
 # === Performance Profile ===
 profile:
   store-selected: true
   store-fake-ip: true
-  tracing: false  # Enable for debugging
+  tracing: false
 
 # === Advanced TCP/UDP ===
-tcp-concurrent: true  # iOS 15+ supports this
-unified-delay: true  # Better server testing
+tcp-concurrent: true
+unified-delay: true
 keep-alive-interval: 120
-find-process-mode: off  # Save battery
+find-process-mode: off
 global-client-fingerprint: chrome
 
-# === TUN Configuration (Advanced) ===
+# === TUN Configuration ===
 tun:
   enable: true
-  device: meta            # امن‌ترین گزینه برای موبایل (نه utun)
-  stack: gvisor           # پایدار و سبک روی iOS / Android
-  mtu: 1400               # مقدار مناسب برای جلوگیری از قطع و وصل
-  dns-hijack:             # رهگیری همه درخواست‌های DNS
+  device: meta
+  stack: system
+  mtu: 1400
+  dns-hijack:
     - any:53
     - tcp://any:53
-  auto-route: true        # روت کردن خودکار ترافیک
+  auto-route: true
   auto-detect-interface: true
-  strict-route: true      # جلوگیری از DNS/Traffic Leak
-  endpoint-independent-nat: true  # مهم برای UDP و بازی‌های آنلاین
-  route-address:          # پوشش کامل IPv4 و IPv6
+  strict-route: true
+  endpoint-independent-nat: true
+  route-address:
     - 0.0.0.0/1
     - 128.0.0.0/1
     - ::/1
     - 8000::/1
-  route-exclude-address:  # فقط شبکه‌های خصوصی/رزرو شده (مشکل‌ساز نیستند)
+  route-exclude-address:
     - 192.168.0.0/16
     - 172.16.0.0/12
     - 10.0.0.0/8
@@ -59,193 +51,17 @@ tun:
 # === Smart DNS Configuration ===
 dns:
   enable: true
-  ipv6: false
   enhanced-mode: fake-ip
-  fake-ip-range: 28.0.0.1/8
-  fake-ip-filter-mode: whitelist
+  fake-ip-range: 198.18.0.1/16
+  nameserver:
+    - 1.1.1.1
+    - 8.8.8.8
+  default-nameserver:
+    - 1.1.1.1
+    - 8.8.8.8
   fake-ip-filter:
-    # دامنه‌های محلی
     - "*.lan"
     - "*.local"
-    - "*.localhost"
-    - "*.home.arpa"
-    # Apple services - حساس به IP
-    - "+.apple.com"
-    - "+.icloud.com"
-    - "+.icloud-content.com"
-    - "+.mzstatic.com"
-    - "+.apple-dns.net"
-    # Meta services (Instagram/Facebook) - حساس به IP واقعی
-    - "+.instagram.com"
-    - "+.cdninstagram.com"
-    - "+.facebook.com"
-    - "+.fbcdn.net"
-    - "+.fb.me"
-    - "+.fbsbx.com"
-    - "+.facebook-hardware.com"
-    - "+.whatsapp.com"
-    - "+.whatsapp.net"
-    # سایت‌های ایرانی - نیاز به IP واقعی
-    - "+.ir"
-    - "+.digikala.com"
-    - "+.shaparak.ir"
-    - "+.mydigipay.com"
-    - "+.snapp.ir"
-    - "+.snapp.market"
-    - "+.tapsi.ir"
-    - "+.filimo.com"
-    - "+.aparat.com"
-    - "+.telewebion.com"
-    - "+.namava.ir"
-    - "+.bazaar.ir"
-    - "+.cafebazaar.ir"
-    - "+.sheypoor.com"
-    - "+.divar.ir"
-    # سرویس‌های بانکی ایران
-    - "+.bmi.ir"
-    - "+.bankmellat.ir"
-    - "+.bpi.ir"
-    - "+.bki.ir"
-    - "+.sb24.ir"
-    - "+.sapp.ir"
-    - "+.shaparak.ir"
-    # سرویس‌های دولتی
-    - "+.gov.ir"
-    - "+.dolat.ir"
-    - "+.e-gov.ir"
-  cache-algorithm: arc
-  use-hosts: true
-  use-system-hosts: true
-  
-  # Smart DNS Chain - بهینه برای ایران
-  default-nameserver:
-    - 8.8.8.8
-    - 1.1.1.1
-    - 9.9.9.9
-    - 208.67.222.222
-  
-  # Primary nameservers
-  nameserver:
-    - 8.8.8.8
-    - 8.8.4.4
-    - 1.1.1.1
-    - 1.0.0.1
-    - 9.9.9.9
-    - 208.67.222.222
-    - 208.67.220.220
-    - tls://8.8.8.8:853
-    - tls://1.1.1.1:853
-  
-  # Fallback chain
-  fallback:
-    - 185.51.200.2
-    - 178.22.122.100
-    - 94.232.174.194
-    - 10.202.10.10
-    - 10.202.10.11
-    - 4.2.2.4
-  
-  fallback-filter:
-    geoip: true
-    geoip-code: IR
-    ipcidr:
-      - 10.0.0.0/8
-      - 127.0.0.0/8
-      - 172.16.0.0/12
-      - 192.168.0.0/16
-      - 0.0.0.0/8
-      - 100.64.0.0/10
-      - 169.254.0.0/16
-      - 224.0.0.0/4
-      - 240.0.0.0/4
-    domain:
-      - "+.ir"
-      - "+.digikala.com"
-      - "+.shaparak.ir"
-      - "+.mydigipay.com"
-      - "+.snapp.ir"
-      - "+.tapsi.ir"
-      - "+.filimo.com"
-      - "+.aparat.com"
-      - "+.telewebion.com"
-      - "+.gov.ir"
-  
-  # Policy-based DNS routing
-  nameserver-policy:
-    # Gaming DNS
-    "*.epicgames.com": 
-      - 8.8.8.8
-      - 1.1.1.1
-    "*.steam.com":
-      - 8.8.8.8
-      - 1.1.1.1
-    "*.pubg.com":
-      - 8.8.8.8
-      - 1.1.1.1
-    # Streaming DNS
-    "*.netflix.com":
-      - 8.8.8.8
-      - 8.8.4.4
-    "*.youtube.com":
-      - 8.8.8.8
-      - 8.8.4.4
-    "*.googlevideo.com":
-      - 8.8.8.8
-      - 8.8.4.4
-    # سایت‌های فیلتر شده
-    "*.twitter.com":
-      - 8.8.8.8
-      - 1.1.1.1
-    "*.x.com":
-      - 8.8.8.8
-      - 1.1.1.1
-    "*.facebook.com":
-      - 8.8.8.8
-      - 1.1.1.1
-    "*.instagram.com":
-      - 8.8.8.8
-      - 1.1.1.1
-    "*.telegram.org":
-      - 8.8.8.8
-      - 1.1.1.1
-    # Apple services
-    "+.apple.com": system
-    "+.icloud.com": system
-    "+.apple-dns.net": system
-    # سایت‌های ایرانی
-    "+.ir": 
-      - 185.51.200.2
-      - 178.22.122.100
-      - 10.202.10.10
-    "+.digikala.com": 
-      - 185.51.200.2
-      - 10.202.10.10
-    "+.shaparak.ir": 
-      - 10.202.10.10
-      - 185.51.200.2
-    "+.mydigipay.com":
-      - 10.202.10.10
-      - 185.51.200.2
-    "+.snapp.ir":
-      - 185.51.200.2
-      - 10.202.10.10
-    "+.tapsi.ir":
-      - 185.51.200.2
-      - 10.202.10.10
-    "+.filimo.com":
-      - 185.51.200.2
-      - 10.202.10.10
-    "+.aparat.com":
-      - 185.51.200.2
-      - 10.202.10.10
-    "+.telewebion.com":
-      - 185.51.200.2
-      - 10.202.10.10
-    # Local domains
-    "+.lan": system
-    "+.local": system
-    "+.localhost": system
-    
 # === Advanced Sniffer ===
 sniffer:
   enable: true
@@ -269,33 +85,11 @@ sniffer:
     - "+.apple.com"
     - "+.ir"
 
-# === Proxy Providers ===
 proxy-providers:
-  # اینجا subscription های خودتون رو اضافه کنید
-  # all-servers:
-  #   type: http
-  #   url: "YOUR_SUBSCRIPTION_URL"
-  #   interval: 86400
-  #   health-check:
-  #     enable: true
-  #     interval: 300
-  #     lazy: false
-  #     url: http://cp.cloudflare.com/generate_204
 
-# === Manual Proxies ===
 proxies: []
-# مثال برای اضافه کردن دستی:
-# - name: "🇺🇸 US-Server"
-#   type: ss
-#   server: 1.2.3.4
-#   port: 443
-#   cipher: aes-256-gcm
-#   password: "password"
-#   udp: true
 
-# === Proxy Groups (Advanced) ===
 proxy-groups:
-  # === Main Selector ===
   - name: "🚀 انتخاب پروکسی"
     type: select
     proxies:
@@ -306,103 +100,70 @@ proxy-groups:
       - "⚡ حالت سرعت"
       - "🌍 انتخاب دستی"
       - "DIRECT"
-    # use:
-    #   - all-servers
 
-  # === Auto Mode (Smart Selection) ===
   - name: "🌐 حالت خودکار"
     type: url-test
     proxies: []
-    # use:
-    #   - all-servers
     url: http://cp.cloudflare.com/generate_204
     interval: 120
     tolerance: 30
     lazy: false
 
-  # === Gaming Mode (Low Latency) ===
   - name: "🎮 حالت گیمینگ"
     type: url-test
     proxies: []
-    # use:
-    #   - all-servers
-    # filter: "香港|新加坡|日本|HK|SG|JP|Game|Gaming|游戏"
     url: http://cp.cloudflare.com/generate_204
     interval: 60
     tolerance: 20
     lazy: false
 
-  # === Streaming Mode (High Bandwidth) ===
   - name: "🎬 حالت استریمینگ"
     type: load-balance
     strategy: consistent-hashing
     proxies: []
-    # use:
-    #   - all-servers
-    # filter: "美国|US|Netflix|Stream|流媒体"
     url: http://cp.cloudflare.com/generate_204
     interval: 180
     lazy: true
 
-  # === Battery Saver Mode ===
   - name: "🔋 حالت ذخیره باتری"
     type: fallback
     proxies: []
-    # use:
-    #   - all-servers
     url: http://cp.cloudflare.com/generate_204
     interval: 600
     lazy: true
 
-  # === Speed Mode (Multi-connection) ===
   - name: "⚡ حالت سرعت"
     type: load-balance
     strategy: round-robin
     proxies: []
-    # use:
-    #   - all-servers
     url: http://cp.cloudflare.com/generate_204
     interval: 120
     lazy: false
 
-  # === Manual Selection ===
   - name: "🌍 انتخاب دستی"
     type: select
     proxies:
       - "DIRECT"
       - "REJECT"
-    # use:
-    #   - all-servers
 
-  # === Regional Groups ===
   - name: "🇺🇸 آمریکا"
     type: url-test
     proxies: []
-    # filter: "🇺🇸|美国|洛杉矶|US|United States"
-    # use:
-    #   - all-servers
     url: http://cp.cloudflare.com/generate_204
     interval: 300
 
   - name: "🇪🇺 اروپا"
     type: url-test
     proxies: []
-    # filter: "🇬🇧|🇩🇪|🇫🇷|德国|英国|法国|Europe"
-    # use:
-    #   - all-servers
     url: http://cp.cloudflare.com/generate_204
     interval: 300
 
   - name: "🌏 آسیا"
     type: url-test
     proxies: []
-    # filter: "🇸🇬|🇯🇵|🇰🇷|新加坡|日本|韩国|Asia"
-    # use:
-    #   - all-servers
     url: http://cp.cloudflare.com/generate_204
     interval: 300
 
-  # === Service-Specific Groups ===
   - name: "📱 شبکه‌های اجتماعی"
     type: select
     proxies:
@@ -477,7 +238,7 @@ proxy-groups:
       - "DIRECT"
       - "REJECT"
 
-# === Advanced Rules ===
+# === Rules ===
 rules:
   # === LAN & Local ===
   - DOMAIN-SUFFIX,local,DIRECT
@@ -500,7 +261,7 @@ rules:
   - IP-CIDR6,ff00::/8,DIRECT,no-resolve
   - IP-CIDR,255.255.255.255/32,DIRECT,no-resolve
 
-  # === Gaming Rules (Priority) ===
+  # === Gaming Rules ===
   - DOMAIN-KEYWORD,epicgames,🎮 گیمینگ
   - DOMAIN-KEYWORD,steam,🎮 گیمینگ
   - DOMAIN-KEYWORD,xbox,🎮 گیمینگ
@@ -527,7 +288,6 @@ rules:
   - DOMAIN-SUFFIX,riotgames.com,🎮 گیمینگ
   - DOMAIN-SUFFIX,leagueoflegends.com,🎮 گیمینگ
   - DOMAIN-SUFFIX,valorant.com,🎮 گیمینگ
-  # Gaming ports
   - DST-PORT,3074,🎮 گیمینگ
   - DST-PORT,3075,🎮 گیمینگ
   - DST-PORT,3076,🎮 گیمینگ
@@ -537,23 +297,18 @@ rules:
   - DST-PORT,27015,🎮 گیمینگ
   - DST-PORT,27036,🎮 گیمینگ
 
-# === Apple Services ===
-  # Core Apple Domains
+  # === Apple Services ===
   - DOMAIN-SUFFIX,apple.com,🍎 Apple
   - DOMAIN-SUFFIX,apple.com.cn,🍎 Apple
   - DOMAIN-SUFFIX,apple-dns.net,🍎 Apple
   - DOMAIN-SUFFIX,apple.news,🍎 Apple
   - DOMAIN-KEYWORD,apple,🍎 Apple
-  
-  # iCloud Services
   - DOMAIN-SUFFIX,icloud.com,🍎 Apple
   - DOMAIN-SUFFIX,icloud.com.cn,🍎 Apple
   - DOMAIN-SUFFIX,icloud-content.com,🍎 Apple
   - DOMAIN-SUFFIX,icloud.apple.com,🍎 Apple
   - DOMAIN-SUFFIX,icloudmail.net,🍎 Apple
   - DOMAIN-SUFFIX,me.com,🍎 Apple
-  
-  # Apple CDN & Content
   - DOMAIN-SUFFIX,mzstatic.com,🍎 Apple
   - DOMAIN-SUFFIX,aaplimg.com,🍎 Apple
   - DOMAIN-SUFFIX,cdn-apple.com,🍎 Apple
@@ -562,14 +317,10 @@ rules:
   - DOMAIN-SUFFIX,applemusic.com,🍎 Apple
   - DOMAIN-SUFFIX,appsto.re,🍎 Apple
   - DOMAIN-SUFFIX,appstore.com,🍎 Apple
-  
-  # Apple Maps & Location
   - DOMAIN-SUFFIX,apple-mapkit.com,🍎 Apple
   - DOMAIN-SUFFIX,maps.apple.com,🍎 Apple
   - DOMAIN-SUFFIX,ls.apple.com,🍎 Apple
   - DOMAIN-SUFFIX,gs-loc.apple.com,🍎 Apple
-  
-  # iTunes & Media Services  
   - DOMAIN-SUFFIX,itunes.com,🍎 Apple
   - DOMAIN-SUFFIX,itunes.apple.com,🍎 Apple
   - DOMAIN-SUFFIX,itunesconnect.apple.com,🍎 Apple
@@ -577,27 +328,19 @@ rules:
   - DOMAIN-SUFFIX,tv.apple.com,🍎 Apple
   - DOMAIN-SUFFIX,podcasts.apple.com,🍎 Apple
   - DOMAIN-SUFFIX,books.apple.com,🍎 Apple
-  
-  # Apple Developer & TestFlight
   - DOMAIN-SUFFIX,developer.apple.com,🍎 Apple
   - DOMAIN-SUFFIX,testflight.apple.com,🍎 Apple
   - DOMAIN-SUFFIX,sandbox.push.apple.com,🍎 Apple
   - DOMAIN-SUFFIX,beta.apple.com,🍎 Apple
-  
-  # Apple Push & Services
   - DOMAIN-SUFFIX,push.apple.com,🍎 Apple
   - DOMAIN-SUFFIX,push-apple.com.akadns.net,🍎 Apple
   - DOMAIN-SUFFIX,courier.push.apple.com,🍎 Apple
   - DOMAIN-SUFFIX,gateway.icloud.com,🍎 Apple
-  
-  # Apple Support & Store
   - DOMAIN-SUFFIX,getsupport.apple.com,🍎 Apple
   - DOMAIN-SUFFIX,support.apple.com,🍎 Apple
   - DOMAIN-SUFFIX,apple.co,🍎 Apple
   - DOMAIN-SUFFIX,applestore.com,🍎 Apple
   - DOMAIN-SUFFIX,apple-pay.com,🍎 Apple
-  
-  # Apple System Updates
   - DOMAIN-SUFFIX,updates.apple.com,🍎 Apple
   - DOMAIN-SUFFIX,updates.cdn-apple.com,🍎 Apple
   - DOMAIN-SUFFIX,swcdn.apple.com,🍎 Apple
@@ -606,31 +349,26 @@ rules:
   - DOMAIN-SUFFIX,swscan.apple.com,🍎 Apple
   - DOMAIN-SUFFIX,osxapps.itunes.apple.com,🍎 Apple
   - DOMAIN-SUFFIX,osrecovery.apple.com,🍎 Apple
-  
-  # Apple Miscellaneous
   - DOMAIN-SUFFIX,apple.comscoreresearch.com,🍎 Apple
-  - DOMAIN-SUFFIX,apple.news,🍎 Apple
   - DOMAIN-SUFFIX,apple.maps,🍎 Apple
   - DOMAIN-SUFFIX,applemusic.apple.com,🍎 Apple
   - DOMAIN-SUFFIX,appletrailers.com,🍎 Apple
   - DOMAIN-SUFFIX,appleid.apple.com,🍎 Apple
   - DOMAIN-SUFFIX,appleid.cdn-apple.com,🍎 Apple
-  
-  # Apple IP Ranges (Updated 2024)
-  - IP-CIDR,17.0.0.0/8,🍎 Apple,no-resolve        # Apple Primary
-  - IP-CIDR,63.92.224.0/19,🍎 Apple,no-resolve    # Apple Services
-  - IP-CIDR,65.199.22.0/23,🍎 Apple,no-resolve    # Apple Services
-  - IP-CIDR,139.178.128.0/18,🍎 Apple,no-resolve  # Apple Cloud
-  - IP-CIDR,144.178.0.0/19,🍎 Apple,no-resolve    # Apple Cloud
-  - IP-CIDR,144.178.36.0/22,🍎 Apple,no-resolve   # Apple Cloud
-  - IP-CIDR,144.178.48.0/20,🍎 Apple,no-resolve   # Apple Cloud
-  - IP-CIDR,192.35.50.0/24,🍎 Apple,no-resolve    # Apple Services
-  - IP-CIDR,198.183.17.0/24,🍎 Apple,no-resolve   # Apple Services
-  - IP-CIDR,205.180.175.0/24,🍎 Apple,no-resolve  # Apple Services
-  - IP-CIDR6,2620:149:a44::/48,🍎 Apple,no-resolve # Apple IPv6
-  - IP-CIDR6,2403:300:a42::/48,🍎 Apple,no-resolve # Apple IPv6
-  - IP-CIDR6,2403:300:a51::/48,🍎 Apple,no-resolve # Apple IPv6
-  - IP-CIDR6,2a01:b740:a42::/48,🍎 Apple,no-resolve # Apple IPv6
+  - IP-CIDR,17.0.0.0/8,🍎 Apple,no-resolve
+  - IP-CIDR,63.92.224.0/19,🍎 Apple,no-resolve
+  - IP-CIDR,65.199.22.0/23,🍎 Apple,no-resolve
+  - IP-CIDR,139.178.128.0/18,🍎 Apple,no-resolve
+  - IP-CIDR,144.178.0.0/19,🍎 Apple,no-resolve
+  - IP-CIDR,144.178.36.0/22,🍎 Apple,no-resolve
+  - IP-CIDR,144.178.48.0/20,🍎 Apple,no-resolve
+  - IP-CIDR,192.35.50.0/24,🍎 Apple,no-resolve
+  - IP-CIDR,198.183.17.0/24,🍎 Apple,no-resolve
+  - IP-CIDR,205.180.175.0/24,🍎 Apple,no-resolve
+  - IP-CIDR6,2620:149:a44::/48,🍎 Apple,no-resolve
+  - IP-CIDR6,2403:300:a42::/48,🍎 Apple,no-resolve
+  - IP-CIDR6,2403:300:a51::/48,🍎 Apple,no-resolve
+  - IP-CIDR6,2a01:b740:a42::/48,🍎 Apple,no-resolve
 
   # === Ads & Analytics Block ===
   - DOMAIN-KEYWORD,googleads,🛡️ بلاک تبلیغات
@@ -651,7 +389,7 @@ rules:
   - DOMAIN-SUFFIX,firebase.com,🛡️ بلاک تبلیغات
   - DOMAIN-SUFFIX,crashlytics.com,🛡️ بلاک تبلیغات
 
-  # === Streaming Services (Optimized) ===
+  # === Streaming Services ===
   - DOMAIN-SUFFIX,youtube.com,🎬 استریمینگ
   - DOMAIN-SUFFIX,youtu.be,🎬 استریمینگ
   - DOMAIN-SUFFIX,ytimg.com,🎬 استریمینگ
@@ -689,118 +427,99 @@ rules:
   - DOMAIN-SUFFIX,soundcloud.com,🎬 استریمینگ
   - DOMAIN-SUFFIX,sndcdn.com,🎬 استریمینگ
 
-  # === Social Media ===
-# === Meta Services (Facebook, Instagram, WhatsApp) ===
-  - DOMAIN-SUFFIX,facebook.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,fb.me,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,fb.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,fbcdn.net,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,fbsbx.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,facebook-hardware.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,facebookmail.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,facebookcorewwwi.onion,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,instagram.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,cdninstagram.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,instagramstatic-a.akamaihd.net,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,instagramstatic-a.akamaihd.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,igcdn.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,igsonar.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,whatsapp.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,whatsapp.net,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,wa.me,📱 شبکه‌های اجتماعی
-  - DOMAIN-KEYWORD,facebook,📱 شبکه‌های اجتماعی
-  - DOMAIN-KEYWORD,instagram,📱 شبکه‌های اجتماعی
-  - DOMAIN-KEYWORD,whatsapp,📱 شبکه‌های اجتماعی
-  
-  # === Twitter/X ===
-  - DOMAIN-SUFFIX,twitter.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,x.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,twimg.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,t.co,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,twimg.co,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,twitpic.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,twitter.jp,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,vine.co,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,periscope.tv,📱 شبکه‌های اجتماعی
-  - DOMAIN-KEYWORD,twitter,📱 شبکه‌های اجتماعی
-  
-  # === Telegram ===
-  - DOMAIN-SUFFIX,telegram.org,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,t.me,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,telegram.me,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,telegra.ph,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,telesco.pe,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,tdesktop.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,telegram-cdn.org,📱 شبکه‌های اجتماعی
-  - DOMAIN-KEYWORD,telegram,📱 شبکه‌های اجتماعی
-  
-  # === LinkedIn ===
-  - DOMAIN-SUFFIX,linkedin.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,linkedin-ei.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,licdn.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,licdn.net,📱 شبکه‌های اجتماعی
-  
-  # === Reddit ===
-  - DOMAIN-SUFFIX,reddit.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,redditmedia.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,redditstatic.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,redd.it,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,reddituploads.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,redditmail.com,📱 شبکه‌های اجتماعی
-  
-  # === TikTok ===
-  - DOMAIN-SUFFIX,tiktok.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,tiktokcdn.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,tiktokv.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,tiktokcdn-us.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,muscdn.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,musical.ly,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,byteoversea.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,ibytedtos.com,📱 شبکه‌های اجتماعی
-  
-  # === Pinterest ===
-  - DOMAIN-SUFFIX,pinterest.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,pinterest.at,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,pinterest.ca,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,pinterest.co.uk,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,pinterest.de,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,pinterest.fr,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,pinimg.com,📱 شبکه‌های اجتماعی
-  
-  # === Snapchat ===
-  - DOMAIN-SUFFIX,snapchat.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,snap.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,snapads.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,sc-cdn.net,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,snapkit.co,📱 شبکه‌های اجتماعی
-  
-  # === Discord ===
-  - DOMAIN-SUFFIX,discord.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,discordapp.com,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,discordapp.net,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,discord.gg,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,discord.media,📱 شبکه‌های اجتماعی
-  - DOMAIN-SUFFIX,discordcdn.com,📱 شبکه‌های اجتماعی
-  
-  # === Social Media IP Ranges ===
-  - IP-CIDR,31.13.0.0/16,📱 شبکه‌های اجتماعی,no-resolve      # Facebook
-  - IP-CIDR,66.220.0.0/16,📱 شبکه‌های اجتماعی,no-resolve     # Facebook
-  - IP-CIDR,69.63.0.0/16,📱 شبکه‌های اجتماعی,no-resolve      # Facebook  
-  - IP-CIDR,74.119.76.0/22,📱 شبکه‌های اجتماعی,no-resolve    # Facebook
-  - IP-CIDR,103.4.96.0/22,📱 شبکه‌های اجتماعی,no-resolve     # Facebook
-  - IP-CIDR,129.134.0.0/16,📱 شبکه‌های اجتماعی,no-resolve    # Facebook
-  - IP-CIDR,157.240.0.0/16,📱 شبکه‌های اجتماعی,no-resolve    # Facebook
-  - IP-CIDR,173.252.0.0/16,📱 شبکه‌های اجتماعی,no-resolve    # Facebook
-  - IP-CIDR,179.60.192.0/22,📱 شبکه‌های اجتماعی,no-resolve   # Facebook
-  - IP-CIDR,185.60.216.0/22,📱 شبکه‌های اجتماعی,no-resolve   # Facebook
-  - IP-CIDR,204.15.20.0/22,📱 شبکه‌های اجتماعی,no-resolve    # Facebook
-  - IP-CIDR,91.108.0.0/16,📱 شبکه‌های اجتماعی,no-resolve     # Telegram
-  - IP-CIDR,149.154.0.0/16,📱 شبکه‌های اجتماعی,no-resolve    # Telegram
-  - IP-CIDR,95.161.64.0/20,📱 شبکه‌های اجتماعی,no-resolve    # Telegram
-  - IP-CIDR,91.105.192.0/23,📱 شبکه‌های اجتماعی,no-resolve   # Telegram
-  - IP-CIDR,91.108.56.0/22,📱 شبکه‌های اجتماعی,no-resolve    # Telegram
-  - IP-CIDR,149.154.160.0/20,📱 شبکه‌های اجتماعی,no-resolve  # Telegram
-  - IP-CIDR,185.76.151.0/24,📱 شبکه‌های اجتماعی,no-resolve   # Telegram
+  # === Social Media (با no-resolve برای Instagram) ===
+  - DOMAIN-SUFFIX,facebook.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,fb.me,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,fb.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,fbcdn.net,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,fbsbx.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,facebook-hardware.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,facebookmail.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,facebookcorewwwi.onion,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,instagram.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,cdninstagram.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,instagramstatic-a.akamaihd.net,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,instagramstatic-a.akamaihd.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,igcdn.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,igsonar.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,whatsapp.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,whatsapp.net,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,wa.me,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-KEYWORD,facebook,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-KEYWORD,instagram,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-KEYWORD,whatsapp,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,twitter.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,x.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,twimg.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,t.co,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,twimg.co,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,twitpic.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,twitter.jp,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,vine.co,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,periscope.tv,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-KEYWORD,twitter,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,telegram.org,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,t.me,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,telegram.me,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,telegra.ph,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,telesco.pe,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,tdesktop.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,telegram-cdn.org,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-KEYWORD,telegram,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,linkedin.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,linkedin-ei.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,licdn.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,licdn.net,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,reddit.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,redditmedia.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,redditstatic.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,redd.it,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,reddituploads.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,redditmail.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,tiktok.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,tiktokcdn.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,tiktokv.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,tiktokcdn-us.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,muscdn.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,musical.ly,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,byteoversea.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,ibytedtos.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,pinterest.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,pinterest.at,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,pinterest.ca,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,pinterest.co.uk,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,pinterest.de,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,pinterest.fr,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,pinimg.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,snapchat.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,snap.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,snapads.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,sc-cdn.net,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,snapkit.co,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,discord.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,discordapp.com,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,discordapp.net,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,discord.gg,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,discord.media,📱 شبکه‌های اجتماعی,no-resolve
+  - DOMAIN-SUFFIX,discordcdn.com,📱 شبکه‌های اجتماعی,no-resolve
+  - IP-CIDR,31.13.0.0/16,📱 شبکه‌های اجتماعی,no-resolve
+  - IP-CIDR,66.220.0.0/16,📱 شبکه‌های اجتماعی,no-resolve
+  - IP-CIDR,69.63.0.0/16,📱 شبکه‌های اجتماعی,no-resolve
+  - IP-CIDR,74.119.76.0/22,📱 شبکه‌های اجتماعی,no-resolve
+  - IP-CIDR,103.4.96.0/22,📱 شبکه‌های اجتماعی,no-resolve
+  - IP-CIDR,129.134.0.0/16,📱 شبکه‌های اجتماعی,no-resolve
+  - IP-CIDR,157.240.0.0/16,📱 شبکه‌های اجتماعی,no-resolve
+  - IP-CIDR,173.252.0.0/16,📱 شبکه‌های اجتماعی,no-resolve
+  - IP-CIDR,179.60.192.0/22,📱 شبکه‌های اجتماعی,no-resolve
+  - IP-CIDR,185.60.216.0/22,📱 شبکه‌های اجتماعی,no-resolve
+  - IP-CIDR,204.15.20.0/22,📱 شبکه‌های اجتماعی,no-resolve
+  - IP-CIDR,91.108.0.0/16,📱 شبکه‌های اجتماعی,no-resolve
+  - IP-CIDR,149.154.0.0/16,📱 شبکه‌های اجتماعی,no-resolve
+  - IP-CIDR,95.161.64.0/20,📱 شبکه‌های اجتماعی,no-resolve
+  - IP-CIDR,91.105.192.0/23,📱 شبکه‌های اجتماعی,no-resolve
+  - IP-CIDR,91.108.56.0/22,📱 شبکه‌های اجتماعی,no-resolve
+  - IP-CIDR,149.154.160.0/20,📱 شبکه‌های اجتماعی,no-resolve
+  - IP-CIDR,185.76.151.0/24,📱 شبکه‌های اجتماعی,no-resolve
 
   # === Work & Productivity ===
   - DOMAIN-SUFFIX,microsoft.com,💼 سرویس‌های کاری
@@ -859,12 +578,10 @@ rules:
   - DOMAIN-SUFFIX,adobe.com,🌍 سایت‌های خارجی
   - DOMAIN-SUFFIX,oracle.com,🌍 سایت‌های خارجی
   - DOMAIN-SUFFIX,salesforce.com,🌍 سایت‌های خارجی
-  - DOMAIN-KEYWORD,cdninstagram,🌍 سایت‌های خارجی
-  - DOMAIN-KEYWORD,instagram,🌍 سایت‌های خارجی
-  # === Iranian Sites & Banks (Direct) ===
+
+  # === Iranian Sites & Banks ===
   - DOMAIN-SUFFIX,ir,🇮🇷 سایت‌های ایرانی
   - DOMAIN-KEYWORD,iran,🇮🇷 سایت‌های ایرانی
-  # پلتفرم‌های ایرانی
   - DOMAIN-SUFFIX,digikala.com,🇮🇷 سایت‌های ایرانی
   - DOMAIN-SUFFIX,dkstatics.com,🇮🇷 سایت‌های ایرانی
   - DOMAIN-SUFFIX,digikalacloud.com,🇮🇷 سایت‌های ایرانی
@@ -889,7 +606,6 @@ rules:
   - DOMAIN-SUFFIX,torob.com,🇮🇷 سایت‌های ایرانی
   - DOMAIN-SUFFIX,emalls.ir,🇮🇷 سایت‌های ایرانی
   - DOMAIN-SUFFIX,zoomit.ir,🇮🇷 سایت‌های ایرانی
-  # بانک‌های ایرانی - حتماً DIRECT
   - DOMAIN-SUFFIX,bmi.ir,🏦 بانک‌های ایران
   - DOMAIN-SUFFIX,bankmellat.ir,🏦 بانک‌های ایران
   - DOMAIN-SUFFIX,bpi.ir,🏦 بانک‌های ایران
@@ -919,14 +635,11 @@ rules:
   - DOMAIN-SUFFIX,rb24.ir,🏦 بانک‌های ایران
   - DOMAIN-SUFFIX,rqbank.ir,🏦 بانک‌های ایران
   - DOMAIN-SUFFIX,qmb.ir,🏦 بانک‌های ایران
-  # اپراتورهای ایرانی
   - DOMAIN-SUFFIX,mci.ir,🇮🇷 سایت‌های ایرانی
   - DOMAIN-SUFFIX,irancell.ir,🇮🇷 سایت‌های ایرانی
   - DOMAIN-SUFFIX,rightel.ir,🇮🇷 سایت‌های ایرانی
   - DOMAIN-SUFFIX,shatel.ir,🇮🇷 سایت‌های ایرانی
   - DOMAIN-SUFFIX,asiatech.ir,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,ddr.drmobilejayzan.info,🇮🇷 سایت‌های ایرانی
-  # === Iranian Sites IP Ranges ===
   - IP-CIDR,2.144.0.0/14,🇮🇷 سایت‌های ایرانی,no-resolve
   - IP-CIDR,5.22.0.0/15,🇮🇷 سایت‌های ایرانی,no-resolve
   - IP-CIDR,5.52.0.0/14,🇮🇷 سایت‌های ایرانی,no-resolve
@@ -941,7 +654,7 @@ rules:
   # === Final Rule ===
   - MATCH,🐟 نهایی
 
-# === Rule Providers (Optional) ===
+# === Rule Providers ===
 rule-providers:
   ir:
     type: http
@@ -964,23 +677,3 @@ rule-providers:
     url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/malware.yaml"
     path: ./ruleset/malware.yaml
     interval: 86400
-
-# === راهنمای کاربران ایرانی ===
-# 
-# DNS های استفاده شده:
-# - Google (8.8.8.8, 8.8.4.4) - اصلی
-# - Cloudflare (1.1.1.1, 1.0.0.1) - سریع
-# - Quad9 (9.9.9.9) - امن
-# - OpenDNS (208.67.222.222) - پایدار
-# - Shecan (185.51.200.2, 178.22.122.100) - برای سایت‌های ایرانی
-# - MCI Internal (10.202.10.10) - برای سایت‌های داخلی
-#
-# نکات مهم:
-# 1. سایت‌های بانکی و دولتی ایران حتماً DIRECT هستند
-# 2. DNS های DoH و DoT در ایران ممکنه کند یا فیلتر باشند
-# 3. برای سایت‌های ایرانی از DNS داخلی استفاده می‌شود
-# 4. در صورت مشکل DNS، از 8.8.8.8 یا 1.1.1.1 استفاده کنید
-#
-# نحوه افزودن سرور:
-# در بخش proxies سرورهای خود را اضافه کنید
-# سپس نام آن‌ها را در proxy-groups مربوطه قرار دهید

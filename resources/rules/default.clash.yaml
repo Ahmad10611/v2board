@@ -21,7 +21,7 @@ global-client-fingerprint: chrome
 tun:
   enable: true
   device: meta
-  stack: system
+  stack: gvisor
   mtu: 1400
   dns-hijack:
     - any:53

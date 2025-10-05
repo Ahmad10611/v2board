@@ -336,19 +336,30 @@ class UserController extends Controller
             }
         }
 
-        //统计在线设备
+        // آمار دستگاه‌های آنلاین
         $countalive = 0;
+        $ips = [];
         $ips_array = Cache::get('ALIVE_IP_USER_' . $request->user['id']);
         if ($ips_array) {
             $countalive = $ips_array['alive_ip'];
+            foreach($ips_array as $nodetypeid => $data) {
+                if (!is_int($data) && isset($data['aliveips'])) {
+                    foreach($data['aliveips'] as $ip_NodeId) {
+                        $ip = explode("_", $ip_NodeId)[0];
+                        $ips[] = $ip . '_' . $nodetypeid;
+                    }
+                }
+            }
         }
         $user['alive_ip'] = $countalive;
+        $user['ips'] = implode(', ', $ips);
 
         $user['subscribe_url'] = Helper::getSubscribeUrl($user['token']);
 
         $userService = new UserService();
         $user['reset_day'] = $userService->getResetDay($user);
         $user['allow_new_period'] = config('v2board.allow_new_period', 0);
+        
         return response([
             'data' => $user
         ]);

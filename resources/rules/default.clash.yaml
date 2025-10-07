@@ -2,678 +2,520 @@ port: 7890
 socks-port: 7891
 allow-lan: false
 mode: rule
-log-level: warning
-
-# === Performance Profile ===
+log-level: debug
 profile:
-  store-selected: true
-  store-fake-ip: true
-  tracing: false
-
-# === Advanced TCP/UDP ===
+    store-selected: true
+    store-fake-ip: true
+    tracing: false
 tcp-concurrent: true
-unified-delay: true
-keep-alive-interval: 120
-find-process-mode: off
+unified-delay: false
+keep-alive-interval: 30
+find-process-mode: always
 global-client-fingerprint: chrome
-
-# === TUN Configuration ===
 tun:
-  enable: true
-  device: meta
-  stack: gvisor
-  mtu: 1400
-  dns-hijack:
-    - any:53
-    - tcp://any:53
-  auto-route: true
-  auto-detect-interface: true
-  strict-route: true
-  endpoint-independent-nat: true
-  route-address:
-    - 0.0.0.0/1
-    - 128.0.0.0/1
-    - ::/1
-    - 8000::/1
-  route-exclude-address:
-    - 192.168.0.0/16
-    - 172.16.0.0/12
-    - 10.0.0.0/8
-    - 127.0.0.0/8
-    - 169.254.0.0/16
-    - 224.0.0.0/4
-    - 240.0.0.0/4
-    - 255.255.255.255/32
-    - fc00::/7
-    - fe80::/10
-    - ff00::/8
-
-# === Smart DNS Configuration ===
+    enable: false
+    device: meta
+    stack: mixed
+    mtu: 1500
+    dns-hijack: ['any:53']
+    auto-route: true
+    auto-detect-interface: true
+    strict-route: false
+    endpoint-independent-nat: true
+    udp-timeout: 300
+    inet4-route-address: [0.0.0.0/1, 128.0.0.0/1]
+    inet6-route-address: ['::/1', '8000::/1']
+    route-exclude-address: [192.168.0.0/16, 172.16.0.0/12, 10.0.0.0/8, 127.0.0.0/8, 169.254.0.0/16, 224.0.0.0/4, 240.0.0.0/4, 255.255.255.255/32, 100.64.0.0/10, 'fc00::/7', 'fe80::/10', 'ff00::/8', 'fec0::/10']
 dns:
   enable: true
+  ipv6: false
+  listen: 0.0.0.0:1053
+  use-hosts: true
   enhanced-mode: fake-ip
   fake-ip-range: 198.18.0.1/16
-  nameserver:
-    - 1.1.1.1
-    - 8.8.8.8
+  
+  # فیلتر fake-ip - فقط موارد ضروری
+  fake-ip-filter:
+    # Local
+    - '*.lan'
+    - '*.local'
+    - 'localhost.ptlogin2.qq.com'
+    
+    # Apple Services (iOS قدیمی)
+    - '+.apple.com'
+    - '+.icloud.com'
+    - '+.mzstatic.com'
+    - '+.apple-cloudkit.com'
+    - '+.push.apple.com'
+    - '+.appleiphonecell.com'
+    
+    # بانک‌های ایرانی
+    - '+.shaparak.ir'
+    - '+.sep.ir'
+    - '+.shetab.ir'
+    - '+.bmi.ir'
+    - '+.bankmellat.ir'
+    - '+.parsian-bank.ir'
+    - '+.bpi.ir'
+    - '+.bki.ir'
+    - '+.sb24.ir'
+    - '+.sapp.ir'
+    - '+.postbank.ir'
+    - '+.bank-maskan.ir'
+    - '+.tejarat.ir'
+    - '+.eghtesadnovin.ir'
+    
+    # سرویس‌های ایرانی حساس
+    - '+.snapp.ir'
+    - '+.tapsi.ir'
+    - '+.cafebazaar.ir'
+    - '+.myket.ir'
+    - '+.digikala.com'
+    
+    # Chinese Apps (Certificate Pinning)
+    - '+.wechat.com'
+    - '+.qq.com'
+    - '+.weixin.qq.com'
+    - '+.tencent.com'
+    
+    # NTP Servers
+    - 'time.*.com'
+    - 'time.*.apple.com'
+    - 'time.*.google.com'
+    - 'ntp.*.com'
+    - '*.time.windows.com'
+    - '*.pool.ntp.org'
+    
+    # STUN Servers (Game/VoIP)
+    - 'stun.*.*'
+    - 'stun.*.*.*'
+  
+  # DNS پایه (برای resolve کردن DNS servers)
   default-nameserver:
     - 1.1.1.1
     - 8.8.8.8
-  fake-ip-filter:
-    - "*.lan"
-    - "*.local"
-# === Advanced Sniffer ===
+  
+  # DNS اصلی - سرورهای خارجی ایمن
+  nameserver:
+    - 1.1.1.1          # Cloudflare Primary
+    - 1.0.0.1          # Cloudflare Secondary
+    - 8.8.8.8          # Google Primary
+    - 8.8.4.4          # Google Secondary
+    - 9.9.9.9          # Quad9 (Security Focus)
+    - 149.112.112.112  # Quad9 Secondary
+    - 208.67.222.222   # OpenDNS Primary
+    - 208.67.220.220   # OpenDNS Secondary
+  
+  # DNS مخصوص دامنه‌های proxy
+  proxy-server-nameserver:
+    - 1.1.1.1
+    - 8.8.8.8
+    - 9.9.9.9
+  
+  # DNS پشتیبان (خارج از کشور)
+  fallback:
+    - 1.1.1.1
+    - 8.8.8.8
+    - 9.9.9.9
+    - 149.112.112.112
+    - 208.67.222.222
+    - 208.67.220.220
+  
+  # فیلتر fallback
+  fallback-filter:
+    geoip: true
+    geoip-code: IR
+    
+    # IP های مشکوک
+    ipcidr:
+      - 0.0.0.0/8
+      - 10.0.0.0/8
+      - 100.64.0.0/10
+      - 127.0.0.0/8
+      - 169.254.0.0/16
+      - 172.16.0.0/12
+      - 192.0.0.0/24
+      - 192.0.2.0/24
+      - 192.168.0.0/16
+      - 198.18.0.0/15
+      - 198.51.100.0/24
+      - 203.0.113.0/24
+      - 224.0.0.0/4
+      - 240.0.0.0/4
+      - 255.255.255.255/32
 sniffer:
-  enable: true
-  parse-pure-ip: true
-  override-destination: false
-  sniff:
-    TLS:
-      ports: [443, 8443]
-      override-destination: false
-    HTTP:
-      ports: [80, 8080, 8880]
-      override-destination: false
-    QUIC:
-      ports: [443, 8443]
-      override-destination: false
-  force-domain:
-    - "+.google.com"
-    - "+.facebook.com"
-    - "+.youtube.com"
-  skip-domain:
-    - "+.apple.com"
-    - "+.ir"
-
+    enable: true
+    parse-pure-ip: true
+    override-destination: false
+    sniff: { TLS: { ports: [443, 8443, 853], override-destination: false }, HTTP: { ports: [80, 8080, 8880, 2052, 2082, 2086, 2095], override-destination: false }, QUIC: { ports: [443, 8443], override-destination: false } }
+    force-domain: [+.google.com, +.googleapis.com, +.gstatic.com, +.googlevideo.com, +.youtube.com, +.ytimg.com, +.facebook.com, +.fbcdn.net, +.instagram.com, +.cdninstagram.com, +.igcdn.com, +.whatsapp.com, +.whatsapp.net, +.twitter.com, +.x.com, +.twimg.com, +.t.co, +.telegram.org, +.t.me, +.tiktok.com, +.tiktokcdn.com, +.musical.ly, +.netflix.com, +.nflxvideo.net, +.spotify.com, +.discord.com, +.discordapp.com]
+    skip-domain: [+.apple.com, +.icloud.com, +.mzstatic.com, +.ir, +.iran, +.local, 'Mijia Cloud']
 proxy-providers:
 
 proxies: []
 
 proxy-groups:
-  - name: "🚀 انتخاب پروکسی"
+  - name: "🚀 پروکسی"
     type: select
     proxies:
-      - "🌐 حالت خودکار"
-      - "🎮 حالت گیمینگ"
-      - "🎬 حالت استریمینگ"
-      - "🔋 حالت ذخیره باتری"
-      - "⚡ حالت سرعت"
-      - "🌍 انتخاب دستی"
-      - "DIRECT"
+      - "⚡ خودکار"
 
-  - name: "🌐 حالت خودکار"
-    type: url-test
-    proxies: []
-    url: http://cp.cloudflare.com/generate_204
-    interval: 120
-    tolerance: 30
-    lazy: false
-
-  - name: "🎮 حالت گیمینگ"
+  - name: "⚡ خودکار"
     type: url-test
     proxies: []
     url: http://cp.cloudflare.com/generate_204
     interval: 60
-    tolerance: 20
+    tolerance: 50
     lazy: false
-
-  - name: "🎬 حالت استریمینگ"
-    type: load-balance
-    strategy: consistent-hashing
-    proxies: []
-    url: http://cp.cloudflare.com/generate_204
-    interval: 180
-    lazy: true
-
-  - name: "🔋 حالت ذخیره باتری"
-    type: fallback
-    proxies: []
-    url: http://cp.cloudflare.com/generate_204
-    interval: 600
-    lazy: true
-
-  - name: "⚡ حالت سرعت"
-    type: load-balance
-    strategy: round-robin
-    proxies: []
-    url: http://cp.cloudflare.com/generate_204
-    interval: 120
-    lazy: false
-
-  - name: "🌍 انتخاب دستی"
-    type: select
-    proxies:
-      - "DIRECT"
-      - "REJECT"
-
-  - name: "🇺🇸 آمریکا"
-    type: url-test
-    proxies: []
-    url: http://cp.cloudflare.com/generate_204
-    interval: 300
-
-  - name: "🇪🇺 اروپا"
-    type: url-test
-    proxies: []
-    url: http://cp.cloudflare.com/generate_204
-    interval: 300
-
-  - name: "🌏 آسیا"
-    type: url-test
-    proxies: []
-    url: http://cp.cloudflare.com/generate_204
-    interval: 300
-
-  - name: "📱 شبکه‌های اجتماعی"
-    type: select
-    proxies:
-      - "🌐 حالت خودکار"
-      - "⚡ حالت سرعت"
-      - "🌍 انتخاب دستی"
-      - "DIRECT"
-
-  - name: "🎬 استریمینگ"
-    type: select
-    proxies:
-      - "🎬 حالت استریمینگ"
-      - "🇺🇸 آمریکا"
-      - "⚡ حالت سرعت"
-      - "🌍 انتخاب دستی"
-
-  - name: "🎮 گیمینگ"
-    type: select
-    proxies:
-      - "🎮 حالت گیمینگ"
-      - "🌏 آسیا"
-      - "🌍 انتخاب دستی"
-      - "DIRECT"
-
-  - name: "💼 سرویس‌های کاری"
-    type: select
-    proxies:
-      - "🌐 حالت خودکار"
-      - "🔋 حالت ذخیره باتری"
-      - "🌍 انتخاب دستی"
-      - "DIRECT"
-
-  - name: "🍎 Apple"
-    type: select
-    proxies:
-      - "DIRECT"
-      - "🌐 حالت خودکار"
-      - "🇺🇸 آمریکا"
-
-  - name: "🌍 سایت‌های خارجی"
-    type: select
-    proxies:
-      - "🌐 حالت خودکار"
-      - "⚡ حالت سرعت"
-      - "🔋 حالت ذخیره باتری"
-      - "🌍 انتخاب دستی"
-      - "DIRECT"
-
-  - name: "🇮🇷 سایت‌های ایرانی"
-    type: select
-    proxies:
-      - "DIRECT"
-      - "🌍 انتخاب دستی"
-      - "REJECT"
-
-  - name: "🏦 بانک‌های ایران"
-    type: select
-    proxies:
-      - "DIRECT"
-      - "REJECT"
-
-  - name: "🛡️ بلاک تبلیغات"
-    type: select
-    proxies:
-      - "REJECT"
-      - "DIRECT"
-
-  - name: "🐟 نهایی"
-    type: select
-    proxies:
-      - "🚀 انتخاب پروکسی"
-      - "DIRECT"
-      - "REJECT"
-
-# === Rules ===
 rules:
-  # === LAN & Local ===
-  - DOMAIN-SUFFIX,local,DIRECT
-  - DOMAIN-SUFFIX,localhost,DIRECT
-  - DOMAIN-SUFFIX,home.arpa,DIRECT
-  - DOMAIN-SUFFIX,lan,DIRECT
-  - DOMAIN-SUFFIX,localdomain,DIRECT
-  - DOMAIN-SUFFIX,router.asus.com,DIRECT
-  - DOMAIN-SUFFIX,miwifi.com,DIRECT
-  - DOMAIN-SUFFIX,tplogin.cn,DIRECT
-  - IP-CIDR,127.0.0.0/8,DIRECT,no-resolve
-  - IP-CIDR6,::1/128,DIRECT,no-resolve
-  - IP-CIDR,10.0.0.0/8,DIRECT,no-resolve
-  - IP-CIDR,172.16.0.0/12,DIRECT,no-resolve
-  - IP-CIDR,192.168.0.0/16,DIRECT,no-resolve
-  - IP-CIDR,169.254.0.0/16,DIRECT,no-resolve
-  - IP-CIDR6,fe80::/10,DIRECT,no-resolve
-  - IP-CIDR6,fc00::/7,DIRECT,no-resolve
-  - IP-CIDR,224.0.0.0/4,DIRECT,no-resolve
-  - IP-CIDR6,ff00::/8,DIRECT,no-resolve
-  - IP-CIDR,255.255.255.255/32,DIRECT,no-resolve
+    - 'DOMAIN-SUFFIX,local,DIRECT'
+    - 'DOMAIN-SUFFIX,localhost,DIRECT'
+    - 'DOMAIN-SUFFIX,lan,DIRECT'
+    - 'DOMAIN-SUFFIX,home.arpa,DIRECT'
+    - 'IP-CIDR,127.0.0.0/8,DIRECT,no-resolve'
+    - 'IP-CIDR,10.0.0.0/8,DIRECT,no-resolve'
+    - 'IP-CIDR,172.16.0.0/12,DIRECT,no-resolve'
+    - 'IP-CIDR,192.168.0.0/16,DIRECT,no-resolve'
+    - 'IP-CIDR,169.254.0.0/16,DIRECT,no-resolve'
+    - 'IP-CIDR,224.0.0.0/4,DIRECT,no-resolve'
+    - 'IP-CIDR,255.255.255.255/32,DIRECT,no-resolve'
+    - 'IP-CIDR6,::1/128,DIRECT,no-resolve'
+    - 'IP-CIDR6,fc00::/7,DIRECT,no-resolve'
+    - 'IP-CIDR6,fe80::/10,DIRECT,no-resolve'
+    - 'IP-CIDR6,ff00::/8,DIRECT,no-resolve'
+    - 'DOMAIN-SUFFIX,shaparak.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,sep.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,shetab.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,bmi.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,bankmellat.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,bpi.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,bki.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,sb24.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,sapp.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,parsian-bank.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,karafarinbank.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,postbank.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,en.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,bank-maskan.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,tejarat.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,eghtesadnovin.ir,DIRECT'
+    - 'DOMAIN-KEYWORD,iran,DIRECT'
+    - 'DOMAIN-SUFFIX,ir,DIRECT'
+    - 'DOMAIN-SUFFIX,digikala.com,DIRECT'
+    - 'DOMAIN-SUFFIX,dkstatics.com,DIRECT'
+    - 'DOMAIN-SUFFIX,torob.com,DIRECT'
+    - 'DOMAIN-SUFFIX,emalls.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,bamilo.com,DIRECT'
+    - 'DOMAIN-SUFFIX,divar.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,sheypoor.com,DIRECT'
+    - 'DOMAIN-SUFFIX,snapp.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,snapp.taxi,DIRECT'
+    - 'DOMAIN-SUFFIX,snappfood.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,snapp-box.com,DIRECT'
+    - 'DOMAIN-SUFFIX,tapsi.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,tapsi.cab,DIRECT'
+    - 'DOMAIN-SUFFIX,paziresh24.com,DIRECT'
+    - 'DOMAIN-SUFFIX,doctoreto.com,DIRECT'
+    - 'DOMAIN-SUFFIX,salamat.gov.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,aparat.com,DIRECT'
+    - 'DOMAIN-SUFFIX,filimo.com,DIRECT'
+    - 'DOMAIN-SUFFIX,namava.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,telewebion.com,DIRECT'
+    - 'DOMAIN-SUFFIX,alibaba.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,snapptrip.com,DIRECT'
+    - 'DOMAIN-SUFFIX,flytoday.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,cafebazaar.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,myket.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,isna.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,tasnimnews.com,DIRECT'
+    - 'DOMAIN-SUFFIX,farsnews.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,mehrnews.com,DIRECT'
+    - 'DOMAIN-SUFFIX,iribnews.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,mci.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,irancell.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,rightel.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,shatel.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,asiatech.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,afranet.com,DIRECT'
+    - 'DOMAIN-SUFFIX,gov.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,nic.ir,DIRECT'
+    - 'DOMAIN-SUFFIX,apple.com,DIRECT'
+    - 'DOMAIN-SUFFIX,icloud.com,DIRECT'
+    - 'DOMAIN-SUFFIX,mzstatic.com,DIRECT'
+    - 'DOMAIN-SUFFIX,apple-cloudkit.com,DIRECT'
+    - 'IP-CIDR,17.0.0.0/8,DIRECT,no-resolve'
+    - 'DOMAIN-KEYWORD,adserver,REJECT'
+    - 'DOMAIN-KEYWORD,analytics,REJECT'
+    - 'DOMAIN-KEYWORD,tracking,REJECT'
+    - 'DOMAIN-SUFFIX,doubleclick.net,REJECT'
+    - 'DOMAIN-SUFFIX,googlesyndication.com,REJECT'
+    - 'DOMAIN-SUFFIX,googleadservices.com,REJECT'
+    - 'DOMAIN-SUFFIX,amplitude.com,REJECT'
+    - 'DOMAIN-SUFFIX,appsflyer.com,REJECT'
+    - 'DOMAIN-SUFFIX,flurry.com,REJECT'
+    - 'DOMAIN-KEYWORD,facebook,🚀 پروکسی'
+    - 'DOMAIN-KEYWORD,instagram,🚀 پروکسی'
+    - 'DOMAIN-KEYWORD,whatsapp,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,fb.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,fbcdn.net,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,facebook.net,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,facebook.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,cdninstagram.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,igcdn.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,instagram.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,whatsapp.net,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,whatsapp.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,wa.me,🚀 پروکسی'
+    - 'DOMAIN,edge-chat.instagram.com,🚀 پروکسی'
+    - 'DOMAIN,rupload.facebook.com,🚀 پروکسی'
+    - 'DOMAIN,gateway.instagram.com,🚀 پروکسی'
+    - 'DOMAIN,graph.facebook.com,🚀 پروکسی'
+    - 'DOMAIN,graph.instagram.com,🚀 پروکسی'
+    - 'DOMAIN,dit.whatsapp.net,🚀 پروکسی'
+    - 'IP-CIDR,31.13.24.0/21,🚀 پروکسی,no-resolve'
+    - 'IP-CIDR,31.13.64.0/18,🚀 پروکسی,no-resolve'
+    - 'IP-CIDR,157.240.0.0/16,🚀 پروکسی,no-resolve'
+    - 'IP-CIDR,173.252.64.0/18,🚀 پروکسی,no-resolve'
+    - 'DOMAIN-KEYWORD,telegram,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,t.me,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,tx.me,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,tg.dev,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,telegram.org,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,telegram.dog,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,telegram.me,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,telegra.ph,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,telesco.pe,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,tdesktop.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,telegram-cdn.org,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,telegram.space,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,telegramdownload.com,🚀 پروکسی'
+    - 'IP-CIDR,91.105.192.0/23,🚀 پروکسی,no-resolve'
+    - 'IP-CIDR,91.108.4.0/22,🚀 پروکسی,no-resolve'
+    - 'IP-CIDR,91.108.8.0/22,🚀 پروکسی,no-resolve'
+    - 'IP-CIDR,91.108.12.0/22,🚀 پروکسی,no-resolve'
+    - 'IP-CIDR,91.108.16.0/22,🚀 پروکسی,no-resolve'
+    - 'IP-CIDR,91.108.20.0/22,🚀 پروکسی,no-resolve'
+    - 'IP-CIDR,91.108.56.0/22,🚀 پروکسی,no-resolve'
+    - 'IP-CIDR,95.161.64.0/20,🚀 پروکسی,no-resolve'
+    - 'IP-CIDR,149.154.160.0/20,🚀 پروکسی,no-resolve'
+    - 'IP-CIDR,149.154.164.0/22,🚀 پروکسی,no-resolve'
+    - 'IP-CIDR,149.154.168.0/22,🚀 پروکسی,no-resolve'
+    - 'IP-CIDR,149.154.172.0/22,🚀 پروکسی,no-resolve'
+    - 'IP-CIDR,185.76.151.0/24,🚀 پروکسی,no-resolve'
+    - 'IP-CIDR6,2001:67c:4e8::/48,🚀 پروکسی,no-resolve'
+    - 'IP-CIDR6,2001:b28:f23c::/47,🚀 پروکسی,no-resolve'
+    - 'IP-CIDR6,2001:b28:f23f::/48,🚀 پروکسی,no-resolve'
+    - 'IP-CIDR6,2a0a:f280::/32,🚀 پروکسی,no-resolve'
+    - 'DOMAIN-KEYWORD,twitter,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,x.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,twimg.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,t.co,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,tiktok.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,tiktokcdn.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,discord.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,discordapp.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,reddit.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,redditmedia.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,linkedin.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,pinterest.com,🚀 پروکسی'
+    - 'DOMAIN-KEYWORD,youtube,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,google.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,googleapis.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,gstatic.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,gmail.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,googleusercontent.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,googlevideo.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,ytimg.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,youtu.be,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,gvt2.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,gvt3.com,🚀 پروکسی'
+    - 'DOMAIN-KEYWORD,netflix,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,nflxvideo.net,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,nflximg.com,🚀 پروکسی'
+    - 'DOMAIN-KEYWORD,spotify,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,scdn.co,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,twitch.tv,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,ttvnw.net,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,hbomax.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,disneyplus.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,primevideo.com,🚀 پروکسی'
+    - 'DOMAIN-KEYWORD,steam,🚀 پروکسی'
+    - 'DOMAIN-KEYWORD,epicgames,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,steampowered.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,steamcontent.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,epicgames.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,fortnite.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,riotgames.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,valorant.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,leagueoflegends.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,ea.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,blizzard.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,battle.net,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,pubgmobile.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,github.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,githubusercontent.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,gitlab.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,microsoft.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,office.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,office365.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,zoom.us,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,slack.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,notion.so,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,dropbox.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,wikipedia.org,🚀 پروکسی'
+  # مطمئن شو این ruleها وجود دارند
+    - 'DOMAIN-KEYWORD,instagram,🚀 پروکسی'
+    - 'DOMAIN-KEYWORD,youtube,🚀 پروکسی'
+    - 'DOMAIN-KEYWORD,googlevideo,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,ytimg.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,wikimedia.org,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,amazon.com,🚀 پروکسی'
+    - 'DOMAIN-SUFFIX,cloudflare.com,🚀 پروکسی'
+    - 'IP-CIDR,2.144.0.0/13,DIRECT,no-resolve'
+    - 'IP-CIDR,2.176.0.0/12,DIRECT,no-resolve'
+    - 'IP-CIDR,5.22.0.0/15,DIRECT,no-resolve'
+    - 'IP-CIDR,5.52.0.0/14,DIRECT,no-resolve'
+    - 'IP-CIDR,5.56.0.0/14,DIRECT,no-resolve'
+    - 'IP-CIDR,5.72.0.0/13,DIRECT,no-resolve'
+    - 'IP-CIDR,5.104.0.0/13,DIRECT,no-resolve'
+    - 'IP-CIDR,5.112.0.0/12,DIRECT,no-resolve'
+    - 'IP-CIDR,5.200.0.0/13,DIRECT,no-resolve'
+    - 'IP-CIDR,31.2.128.0/17,DIRECT,no-resolve'
+    - 'IP-CIDR,31.7.64.0/18,DIRECT,no-resolve'
+    - 'IP-CIDR,37.9.248.0/21,DIRECT,no-resolve'
+    - 'IP-CIDR,37.32.0.0/13,DIRECT,no-resolve'
+    - 'IP-CIDR,37.98.0.0/16,DIRECT,no-resolve'
+    - 'IP-CIDR,37.129.0.0/16,DIRECT,no-resolve'
+    - 'IP-CIDR,37.152.0.0/13,DIRECT,no-resolve'
+    - 'IP-CIDR,37.156.0.0/14,DIRECT,no-resolve'
+    - 'IP-CIDR,37.191.0.0/16,DIRECT,no-resolve'
+    - 'IP-CIDR,37.202.128.0/17,DIRECT,no-resolve'
+    - 'IP-CIDR,46.18.0.0/16,DIRECT,no-resolve'
+    - 'IP-CIDR,46.21.0.0/17,DIRECT,no-resolve'
+    - 'IP-CIDR,46.32.0.0/19,DIRECT,no-resolve'
+    - 'IP-CIDR,46.62.128.0/17,DIRECT,no-resolve'
+    - 'IP-CIDR,46.100.0.0/15,DIRECT,no-resolve'
+    - 'IP-CIDR,46.224.0.0/15,DIRECT,no-resolve'
+    - 'IP-CIDR,78.38.0.0/15,DIRECT,no-resolve'
+    - 'IP-CIDR,78.110.112.0/20,DIRECT,no-resolve'
+    - 'IP-CIDR,78.153.0.0/16,DIRECT,no-resolve'
+    - 'IP-CIDR,79.127.0.0/17,DIRECT,no-resolve'
+    - 'IP-CIDR,79.132.192.0/18,DIRECT,no-resolve'
+    - 'IP-CIDR,79.175.128.0/18,DIRECT,no-resolve'
+    - 'IP-CIDR,80.66.176.0/20,DIRECT,no-resolve'
+    - 'IP-CIDR,80.75.0.0/20,DIRECT,no-resolve'
+    - 'IP-CIDR,80.191.0.0/17,DIRECT,no-resolve'
+    - 'IP-CIDR,80.242.0.0/20,DIRECT,no-resolve'
+    - 'IP-CIDR,80.253.128.0/19,DIRECT,no-resolve'
+    - 'IP-CIDR,81.16.112.0/20,DIRECT,no-resolve'
+    - 'IP-CIDR,81.28.32.0/19,DIRECT,no-resolve'
+    - 'IP-CIDR,81.31.160.0/19,DIRECT,no-resolve'
+    - 'IP-CIDR,81.90.144.0/20,DIRECT,no-resolve'
+    - 'IP-CIDR,81.91.128.0/17,DIRECT,no-resolve'
+    - 'IP-CIDR,82.99.192.0/18,DIRECT,no-resolve'
+    - 'IP-CIDR,82.115.0.0/16,DIRECT,no-resolve'
+    - 'IP-CIDR,82.129.224.0/19,DIRECT,no-resolve'
+    - 'IP-CIDR,83.120.0.0/14,DIRECT,no-resolve'
+    - 'IP-CIDR,83.147.192.0/18,DIRECT,no-resolve'
+    - 'IP-CIDR,85.9.64.0/18,DIRECT,no-resolve'
+    - 'IP-CIDR,85.15.0.0/18,DIRECT,no-resolve'
+    - 'IP-CIDR,85.133.128.0/17,DIRECT,no-resolve'
+    - 'IP-CIDR,85.185.0.0/16,DIRECT,no-resolve'
+    - 'IP-CIDR,85.198.0.0/19,DIRECT,no-resolve'
+    - 'IP-CIDR,86.55.0.0/16,DIRECT,no-resolve'
+    - 'IP-CIDR,86.57.0.0/17,DIRECT,no-resolve'
+    - 'IP-CIDR,87.107.0.0/16,DIRECT,no-resolve'
+    - 'IP-CIDR,87.236.16.0/21,DIRECT,no-resolve'
+    - 'IP-CIDR,87.247.152.0/21,DIRECT,no-resolve'
+    - 'IP-CIDR,87.248.128.0/19,DIRECT,no-resolve'
+    - 'IP-CIDR,88.131.192.0/21,DIRECT,no-resolve'
+    - 'IP-CIDR,88.135.32.0/20,DIRECT,no-resolve'
+    - 'IP-CIDR,89.32.0.0/16,DIRECT,no-resolve'
+    - 'IP-CIDR,89.144.128.0/18,DIRECT,no-resolve'
+    - 'IP-CIDR,89.165.0.0/17,DIRECT,no-resolve'
+    - 'IP-CIDR,89.196.0.0/16,DIRECT,no-resolve'
+    - 'IP-CIDR,89.198.0.0/15,DIRECT,no-resolve'
+    - 'IP-CIDR,89.219.0.0/17,DIRECT,no-resolve'
+    - 'IP-CIDR,89.219.192.0/18,DIRECT,no-resolve'
+    - 'IP-CIDR,91.92.104.0/21,DIRECT,no-resolve'
+    - 'IP-CIDR,91.98.0.0/15,DIRECT,no-resolve'
+    - 'IP-CIDR,91.106.64.0/19,DIRECT,no-resolve'
+    - 'IP-CIDR,91.109.104.0/21,DIRECT,no-resolve'
+    - 'IP-CIDR,91.151.0.0/16,DIRECT,no-resolve'
+    - 'IP-CIDR,91.184.64.0/19,DIRECT,no-resolve'
+    - 'IP-CIDR,92.42.48.0/21,DIRECT,no-resolve'
+    - 'IP-CIDR,92.114.16.0/20,DIRECT,no-resolve'
+    - 'IP-CIDR,92.119.56.0/22,DIRECT,no-resolve'
+    - 'IP-CIDR,92.242.192.0/19,DIRECT,no-resolve'
+    - 'IP-CIDR,92.246.144.0/22,DIRECT,no-resolve'
+    - 'IP-CIDR,93.88.0.0/17,DIRECT,no-resolve'
+    - 'IP-CIDR,93.110.0.0/16,DIRECT,no-resolve'
+    - 'IP-CIDR,93.113.224.0/20,DIRECT,no-resolve'
+    - 'IP-CIDR,93.114.16.0/20,DIRECT,no-resolve'
+    - 'IP-CIDR,93.115.120.0/21,DIRECT,no-resolve'
+    - 'IP-CIDR,93.170.128.0/17,DIRECT,no-resolve'
+    - 'IP-CIDR,93.186.128.0/17,DIRECT,no-resolve'
+    - 'IP-CIDR,94.139.160.0/19,DIRECT,no-resolve'
+    - 'IP-CIDR,94.182.0.0/15,DIRECT,no-resolve'
+    - 'IP-CIDR,95.38.0.0/16,DIRECT,no-resolve'
+    - 'IP-CIDR,95.80.128.0/18,DIRECT,no-resolve'
+    - 'IP-CIDR,95.81.64.0/18,DIRECT,no-resolve'
+    - 'IP-CIDR,95.142.224.0/20,DIRECT,no-resolve'
+    - 'IP-CIDR,151.232.0.0/14,DIRECT,no-resolve'
+    - 'IP-CIDR,151.238.0.0/15,DIRECT,no-resolve'
+    - 'IP-CIDR,151.240.0.0/13,DIRECT,no-resolve'
+    - 'IP-CIDR,164.138.128.0/18,DIRECT,no-resolve'
+    - 'IP-CIDR,176.102.224.0/19,DIRECT,no-resolve'
+    - 'IP-CIDR,178.21.0.0/17,DIRECT,no-resolve'
+    - 'IP-CIDR,178.22.88.0/21,DIRECT,no-resolve'
+    - 'IP-CIDR,178.131.0.0/16,DIRECT,no-resolve'
+    - 'IP-CIDR,178.157.0.0/19,DIRECT,no-resolve'
+    - 'IP-CIDR,178.216.248.0/21,DIRECT,no-resolve'
+    - 'IP-CIDR,178.252.128.0/18,DIRECT,no-resolve'
+    - 'IP-CIDR,185.4.28.0/22,DIRECT,no-resolve'
+    - 'IP-CIDR,185.8.172.0/22,DIRECT,no-resolve'
+    - 'IP-CIDR,185.51.40.0/22,DIRECT,no-resolve'
+    - 'IP-CIDR,185.112.32.0/22,DIRECT,no-resolve'
+    - 'IP-CIDR,185.120.160.0/19,DIRECT,no-resolve'
+    - 'IP-CIDR,185.143.232.0/22,DIRECT,no-resolve'
+    - 'IP-CIDR,185.208.172.0/22,DIRECT,no-resolve'
+    - 'IP-CIDR,185.231.112.0/22,DIRECT,no-resolve'
+    - 'IP-CIDR,188.0.240.0/20,DIRECT,no-resolve'
+    - 'IP-CIDR,188.34.128.0/17,DIRECT,no-resolve'
+    - 'IP-CIDR,188.50.0.0/15,DIRECT,no-resolve'
+    - 'IP-CIDR,188.75.64.0/18,DIRECT,no-resolve'
+    - 'IP-CIDR,188.121.128.0/17,DIRECT,no-resolve'
+    - 'IP-CIDR,188.136.128.0/18,DIRECT,no-resolve'
+    - 'IP-CIDR,188.158.0.0/15,DIRECT,no-resolve'
+    - 'IP-CIDR,188.208.56.0/21,DIRECT,no-resolve'
+    - 'IP-CIDR,188.229.0.0/17,DIRECT,no-resolve'
+    - 'IP-CIDR,188.241.176.0/20,DIRECT,no-resolve'
+    - 'IP-CIDR,193.22.48.0/20,DIRECT,no-resolve'
+    - 'IP-CIDR,193.105.200.0/21,DIRECT,no-resolve'
+    - 'IP-CIDR,193.176.240.0/20,DIRECT,no-resolve'
+    - 'IP-CIDR,194.5.188.0/22,DIRECT,no-resolve'
+    - 'IP-CIDR,194.126.200.0/21,DIRECT,no-resolve'
+    - 'IP-CIDR,194.225.0.0/16,DIRECT,no-resolve'
+    - 'IP-CIDR,195.2.234.0/23,DIRECT,no-resolve'
+    - 'IP-CIDR,195.38.182.0/23,DIRECT,no-resolve'
+    - 'IP-CIDR,195.69.188.0/22,DIRECT,no-resolve'
+    - 'IP-CIDR,195.78.108.0/22,DIRECT,no-resolve'
+    - 'IP-CIDR,195.138.64.0/20,DIRECT,no-resolve'
+    - 'IP-CIDR,195.211.44.0/22,DIRECT,no-resolve'
+    - 'IP-CIDR,195.226.192.0/19,DIRECT,no-resolve'
+    - 'IP-CIDR,212.16.64.0/19,DIRECT,no-resolve'
+    - 'IP-CIDR,212.33.192.0/19,DIRECT,no-resolve'
+    - 'IP-CIDR,212.46.64.0/19,DIRECT,no-resolve'
+    - 'IP-CIDR,212.80.0.0/19,DIRECT,no-resolve'
+    - 'IP-CIDR,212.94.0.0/19,DIRECT,no-resolve'
+    - 'IP-CIDR,213.108.248.0/21,DIRECT,no-resolve'
+    - 'IP-CIDR,213.165.64.0/18,DIRECT,no-resolve'
+    - 'IP-CIDR,213.176.0.0/19,DIRECT,no-resolve'
+    - 'IP-CIDR,213.207.192.0/18,DIRECT,no-resolve'
+    - 'IP-CIDR,213.233.160.0/19,DIRECT,no-resolve'
+    - 'MATCH,🚀 پروکسی'
 
-  # === Gaming Rules ===
-  - DOMAIN-KEYWORD,epicgames,🎮 گیمینگ
-  - DOMAIN-KEYWORD,steam,🎮 گیمینگ
-  - DOMAIN-KEYWORD,xbox,🎮 گیمینگ
-  - DOMAIN-KEYWORD,playstation,🎮 گیمینگ
-  - DOMAIN-KEYWORD,nintendo,🎮 گیمینگ
-  - DOMAIN-SUFFIX,pubg.com,🎮 گیمینگ
-  - DOMAIN-SUFFIX,pubgmobile.com,🎮 گیمینگ
-  - DOMAIN-SUFFIX,igamecj.com,🎮 گیمینگ
-  - DOMAIN-SUFFIX,playbattlegrounds.com,🎮 گیمینگ
-  - DOMAIN-SUFFIX,epicgames.com,🎮 گیمینگ
-  - DOMAIN-SUFFIX,easyanticheat.net,🎮 گیمینگ
-  - DOMAIN-SUFFIX,fortnite.com,🎮 گیمینگ
-  - DOMAIN-SUFFIX,unrealengine.com,🎮 گیمینگ
-  - DOMAIN-SUFFIX,steampowered.com,🎮 گیمینگ
-  - DOMAIN-SUFFIX,steamcontent.com,🎮 گیمینگ
-  - DOMAIN-SUFFIX,steamusercontent.com,🎮 گیمینگ
-  - DOMAIN-SUFFIX,valve.net,🎮 گیمینگ
-  - DOMAIN-SUFFIX,dota2.com,🎮 گیمینگ
-  - DOMAIN-SUFFIX,csgo.com,🎮 گیمینگ
-  - DOMAIN-SUFFIX,respawn.com,🎮 گیمینگ
-  - DOMAIN-SUFFIX,ea.com,🎮 گیمینگ
-  - DOMAIN-SUFFIX,blizzard.com,🎮 گیمینگ
-  - DOMAIN-SUFFIX,battle.net,🎮 گیمینگ
-  - DOMAIN-SUFFIX,riotgames.com,🎮 گیمینگ
-  - DOMAIN-SUFFIX,leagueoflegends.com,🎮 گیمینگ
-  - DOMAIN-SUFFIX,valorant.com,🎮 گیمینگ
-  - DST-PORT,3074,🎮 گیمینگ
-  - DST-PORT,3075,🎮 گیمینگ
-  - DST-PORT,3076,🎮 گیمینگ
-  - DST-PORT,3077,🎮 گیمینگ
-  - DST-PORT,3078,🎮 گیمینگ
-  - DST-PORT,3079,🎮 گیمینگ
-  - DST-PORT,27015,🎮 گیمینگ
-  - DST-PORT,27036,🎮 گیمینگ
-
-  # === Apple Services ===
-  - DOMAIN-SUFFIX,apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,apple.com.cn,🍎 Apple
-  - DOMAIN-SUFFIX,apple-dns.net,🍎 Apple
-  - DOMAIN-SUFFIX,apple.news,🍎 Apple
-  - DOMAIN-KEYWORD,apple,🍎 Apple
-  - DOMAIN-SUFFIX,icloud.com,🍎 Apple
-  - DOMAIN-SUFFIX,icloud.com.cn,🍎 Apple
-  - DOMAIN-SUFFIX,icloud-content.com,🍎 Apple
-  - DOMAIN-SUFFIX,icloud.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,icloudmail.net,🍎 Apple
-  - DOMAIN-SUFFIX,me.com,🍎 Apple
-  - DOMAIN-SUFFIX,mzstatic.com,🍎 Apple
-  - DOMAIN-SUFFIX,aaplimg.com,🍎 Apple
-  - DOMAIN-SUFFIX,cdn-apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,apple-cloudkit.com,🍎 Apple
-  - DOMAIN-SUFFIX,apple-livephotoskit.com,🍎 Apple
-  - DOMAIN-SUFFIX,applemusic.com,🍎 Apple
-  - DOMAIN-SUFFIX,appsto.re,🍎 Apple
-  - DOMAIN-SUFFIX,appstore.com,🍎 Apple
-  - DOMAIN-SUFFIX,apple-mapkit.com,🍎 Apple
-  - DOMAIN-SUFFIX,maps.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,ls.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,gs-loc.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,itunes.com,🍎 Apple
-  - DOMAIN-SUFFIX,itunes.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,itunesconnect.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,music.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,tv.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,podcasts.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,books.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,developer.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,testflight.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,sandbox.push.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,beta.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,push.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,push-apple.com.akadns.net,🍎 Apple
-  - DOMAIN-SUFFIX,courier.push.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,gateway.icloud.com,🍎 Apple
-  - DOMAIN-SUFFIX,getsupport.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,support.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,apple.co,🍎 Apple
-  - DOMAIN-SUFFIX,applestore.com,🍎 Apple
-  - DOMAIN-SUFFIX,apple-pay.com,🍎 Apple
-  - DOMAIN-SUFFIX,updates.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,updates.cdn-apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,swcdn.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,swdist.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,swdownload.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,swscan.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,osxapps.itunes.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,osrecovery.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,apple.comscoreresearch.com,🍎 Apple
-  - DOMAIN-SUFFIX,apple.maps,🍎 Apple
-  - DOMAIN-SUFFIX,applemusic.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,appletrailers.com,🍎 Apple
-  - DOMAIN-SUFFIX,appleid.apple.com,🍎 Apple
-  - DOMAIN-SUFFIX,appleid.cdn-apple.com,🍎 Apple
-  - IP-CIDR,17.0.0.0/8,🍎 Apple,no-resolve
-  - IP-CIDR,63.92.224.0/19,🍎 Apple,no-resolve
-  - IP-CIDR,65.199.22.0/23,🍎 Apple,no-resolve
-  - IP-CIDR,139.178.128.0/18,🍎 Apple,no-resolve
-  - IP-CIDR,144.178.0.0/19,🍎 Apple,no-resolve
-  - IP-CIDR,144.178.36.0/22,🍎 Apple,no-resolve
-  - IP-CIDR,144.178.48.0/20,🍎 Apple,no-resolve
-  - IP-CIDR,192.35.50.0/24,🍎 Apple,no-resolve
-  - IP-CIDR,198.183.17.0/24,🍎 Apple,no-resolve
-  - IP-CIDR,205.180.175.0/24,🍎 Apple,no-resolve
-  - IP-CIDR6,2620:149:a44::/48,🍎 Apple,no-resolve
-  - IP-CIDR6,2403:300:a42::/48,🍎 Apple,no-resolve
-  - IP-CIDR6,2403:300:a51::/48,🍎 Apple,no-resolve
-  - IP-CIDR6,2a01:b740:a42::/48,🍎 Apple,no-resolve
-
-  # === Ads & Analytics Block ===
-  - DOMAIN-KEYWORD,googleads,🛡️ بلاک تبلیغات
-  - DOMAIN-KEYWORD,doubleclick,🛡️ بلاک تبلیغات
-  - DOMAIN-KEYWORD,adserver,🛡️ بلاک تبلیغات
-  - DOMAIN-KEYWORD,analytics,🛡️ بلاک تبلیغات
-  - DOMAIN-SUFFIX,googlesyndication.com,🛡️ بلاک تبلیغات
-  - DOMAIN-SUFFIX,googletagmanager.com,🛡️ بلاک تبلیغات
-  - DOMAIN-SUFFIX,google-analytics.com,🛡️ بلاک تبلیغات
-  - DOMAIN-SUFFIX,googleadservices.com,🛡️ بلاک تبلیغات
-  - DOMAIN-SUFFIX,adsystem.com,🛡️ بلاک تبلیغات
-  - DOMAIN-SUFFIX,adsafeprotected.com,🛡️ بلاک تبلیغات
-  - DOMAIN-SUFFIX,adsrvr.org,🛡️ بلاک تبلیغات
-  - DOMAIN-SUFFIX,adnxs.com,🛡️ بلاک تبلیغات
-  - DOMAIN-SUFFIX,amplitude.com,🛡️ بلاک تبلیغات
-  - DOMAIN-SUFFIX,appsflyer.com,🛡️ بلاک تبلیغات
-  - DOMAIN-SUFFIX,adjust.com,🛡️ بلاک تبلیغات
-  - DOMAIN-SUFFIX,firebase.com,🛡️ بلاک تبلیغات
-  - DOMAIN-SUFFIX,crashlytics.com,🛡️ بلاک تبلیغات
-
-  # === Streaming Services ===
-  - DOMAIN-SUFFIX,youtube.com,🎬 استریمینگ
-  - DOMAIN-SUFFIX,youtu.be,🎬 استریمینگ
-  - DOMAIN-SUFFIX,ytimg.com,🎬 استریمینگ
-  - DOMAIN-SUFFIX,googlevideo.com,🎬 استریمینگ
-  - DOMAIN-SUFFIX,youtube-nocookie.com,🎬 استریمینگ
-  - DOMAIN-SUFFIX,ggpht.com,🎬 استریمینگ
-  - DOMAIN-KEYWORD,youtube,🎬 استریمینگ
-  - DOMAIN-SUFFIX,netflix.com,🎬 استریمینگ
-  - DOMAIN-SUFFIX,nflxext.com,🎬 استریمینگ
-  - DOMAIN-SUFFIX,nflximg.com,🎬 استریمینگ
-  - DOMAIN-SUFFIX,nflxvideo.net,🎬 استریمینگ
-  - DOMAIN-SUFFIX,nflxso.net,🎬 استریمینگ
-  - DOMAIN-KEYWORD,netflix,🎬 استریمینگ
-  - DOMAIN-SUFFIX,spotify.com,🎬 استریمینگ
-  - DOMAIN-SUFFIX,scdn.co,🎬 استریمینگ
-  - DOMAIN-SUFFIX,spotifycdn.com,🎬 استریمینگ
-  - DOMAIN-KEYWORD,spotify,🎬 استریمینگ
-  - DOMAIN-SUFFIX,twitch.tv,🎬 استریمینگ
-  - DOMAIN-SUFFIX,ttvnw.net,🎬 استریمینگ
-  - DOMAIN-SUFFIX,jtvnw.net,🎬 استریمینگ
-  - DOMAIN-SUFFIX,twitchcdn.net,🎬 استریمینگ
-  - DOMAIN-SUFFIX,disney.com,🎬 استریمینگ
-  - DOMAIN-SUFFIX,disneyplus.com,🎬 استریمینگ
-  - DOMAIN-SUFFIX,disney-plus.net,🎬 استریمینگ
-  - DOMAIN-SUFFIX,dssott.com,🎬 استریمینگ
-  - DOMAIN-SUFFIX,hbo.com,🎬 استریمینگ
-  - DOMAIN-SUFFIX,hbogo.com,🎬 استریمینگ
-  - DOMAIN-SUFFIX,hbomax.com,🎬 استریمینگ
-  - DOMAIN-SUFFIX,hulu.com,🎬 استریمینگ
-  - DOMAIN-SUFFIX,huluim.com,🎬 استریمینگ
-  - DOMAIN-SUFFIX,hulustream.com,🎬 استریمینگ
-  - DOMAIN-SUFFIX,prime-video.com,🎬 استریمینگ
-  - DOMAIN-SUFFIX,primevideo.com,🎬 استریمینگ
-  - DOMAIN-SUFFIX,amazonvideo.com,🎬 استریمینگ
-  - DOMAIN-SUFFIX,soundcloud.com,🎬 استریمینگ
-  - DOMAIN-SUFFIX,sndcdn.com,🎬 استریمینگ
-
-  # === Social Media (با no-resolve برای Instagram) ===
-  - DOMAIN-SUFFIX,facebook.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,fb.me,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,fb.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,fbcdn.net,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,fbsbx.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,facebook-hardware.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,facebookmail.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,facebookcorewwwi.onion,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,instagram.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,cdninstagram.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,instagramstatic-a.akamaihd.net,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,instagramstatic-a.akamaihd.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,igcdn.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,igsonar.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,whatsapp.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,whatsapp.net,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,wa.me,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-KEYWORD,facebook,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-KEYWORD,instagram,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-KEYWORD,whatsapp,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,twitter.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,x.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,twimg.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,t.co,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,twimg.co,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,twitpic.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,twitter.jp,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,vine.co,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,periscope.tv,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-KEYWORD,twitter,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,telegram.org,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,t.me,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,telegram.me,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,telegra.ph,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,telesco.pe,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,tdesktop.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,telegram-cdn.org,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-KEYWORD,telegram,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,linkedin.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,linkedin-ei.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,licdn.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,licdn.net,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,reddit.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,redditmedia.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,redditstatic.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,redd.it,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,reddituploads.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,redditmail.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,tiktok.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,tiktokcdn.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,tiktokv.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,tiktokcdn-us.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,muscdn.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,musical.ly,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,byteoversea.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,ibytedtos.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,pinterest.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,pinterest.at,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,pinterest.ca,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,pinterest.co.uk,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,pinterest.de,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,pinterest.fr,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,pinimg.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,snapchat.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,snap.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,snapads.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,sc-cdn.net,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,snapkit.co,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,discord.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,discordapp.com,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,discordapp.net,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,discord.gg,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,discord.media,📱 شبکه‌های اجتماعی,no-resolve
-  - DOMAIN-SUFFIX,discordcdn.com,📱 شبکه‌های اجتماعی,no-resolve
-  - IP-CIDR,31.13.0.0/16,📱 شبکه‌های اجتماعی,no-resolve
-  - IP-CIDR,66.220.0.0/16,📱 شبکه‌های اجتماعی,no-resolve
-  - IP-CIDR,69.63.0.0/16,📱 شبکه‌های اجتماعی,no-resolve
-  - IP-CIDR,74.119.76.0/22,📱 شبکه‌های اجتماعی,no-resolve
-  - IP-CIDR,103.4.96.0/22,📱 شبکه‌های اجتماعی,no-resolve
-  - IP-CIDR,129.134.0.0/16,📱 شبکه‌های اجتماعی,no-resolve
-  - IP-CIDR,157.240.0.0/16,📱 شبکه‌های اجتماعی,no-resolve
-  - IP-CIDR,173.252.0.0/16,📱 شبکه‌های اجتماعی,no-resolve
-  - IP-CIDR,179.60.192.0/22,📱 شبکه‌های اجتماعی,no-resolve
-  - IP-CIDR,185.60.216.0/22,📱 شبکه‌های اجتماعی,no-resolve
-  - IP-CIDR,204.15.20.0/22,📱 شبکه‌های اجتماعی,no-resolve
-  - IP-CIDR,91.108.0.0/16,📱 شبکه‌های اجتماعی,no-resolve
-  - IP-CIDR,149.154.0.0/16,📱 شبکه‌های اجتماعی,no-resolve
-  - IP-CIDR,95.161.64.0/20,📱 شبکه‌های اجتماعی,no-resolve
-  - IP-CIDR,91.105.192.0/23,📱 شبکه‌های اجتماعی,no-resolve
-  - IP-CIDR,91.108.56.0/22,📱 شبکه‌های اجتماعی,no-resolve
-  - IP-CIDR,149.154.160.0/20,📱 شبکه‌های اجتماعی,no-resolve
-  - IP-CIDR,185.76.151.0/24,📱 شبکه‌های اجتماعی,no-resolve
-
-  # === Work & Productivity ===
-  - DOMAIN-SUFFIX,microsoft.com,💼 سرویس‌های کاری
-  - DOMAIN-SUFFIX,office.com,💼 سرویس‌های کاری
-  - DOMAIN-SUFFIX,office365.com,💼 سرویس‌های کاری
-  - DOMAIN-SUFFIX,windows.net,💼 سرویس‌های کاری
-  - DOMAIN-SUFFIX,microsoftonline.com,💼 سرویس‌های کاری
-  - DOMAIN-SUFFIX,outlook.com,💼 سرویس‌های کاری
-  - DOMAIN-SUFFIX,live.com,💼 سرویس‌های کاری
-  - DOMAIN-SUFFIX,skype.com,💼 سرویس‌های کاری
-  - DOMAIN-SUFFIX,teams.microsoft.com,💼 سرویس‌های کاری
-  - DOMAIN-SUFFIX,sharepoint.com,💼 سرویس‌های کاری
-  - DOMAIN-SUFFIX,onedrive.com,💼 سرویس‌های کاری
-  - DOMAIN-SUFFIX,zoom.us,💼 سرویس‌های کاری
-  - DOMAIN-SUFFIX,zoom.com,💼 سرویس‌های کاری
-  - DOMAIN-SUFFIX,zoomus.cn,💼 سرویس‌های کاری
-  - DOMAIN-SUFFIX,slack.com,💼 سرویس‌های کاری
-  - DOMAIN-SUFFIX,slack-edge.com,💼 سرویس‌های کاری
-  - DOMAIN-SUFFIX,notion.so,💼 سرویس‌های کاری
-  - DOMAIN-SUFFIX,notion.com,💼 سرویس‌های کاری
-  - DOMAIN-SUFFIX,dropbox.com,💼 سرویس‌های کاری
-  - DOMAIN-SUFFIX,dropboxusercontent.com,💼 سرویس‌های کاری
-  - DOMAIN-SUFFIX,github.com,💼 سرویس‌های کاری
-  - DOMAIN-SUFFIX,githubusercontent.com,💼 سرویس‌های کاری
-  - DOMAIN-SUFFIX,gitlab.com,💼 سرویس‌های کاری
-  - DOMAIN-SUFFIX,githubassets.com,💼 سرویس‌های کاری
-
-  # === Foreign Websites ===
-  - DOMAIN-SUFFIX,google.com,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,googleapis.com,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,gstatic.com,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,googleusercontent.com,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,chrome.com,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,android.com,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,gmail.com,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,bing.com,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,duckduckgo.com,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,wikipedia.org,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,wikimedia.org,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,amazon.com,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,amazonaws.com,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,ebay.com,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,paypal.com,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,cloudflare.com,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,cloudfront.net,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,akamaized.net,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,fastly.net,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,wordpress.com,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,wp.com,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,blogspot.com,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,blogger.com,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,medium.com,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,stackoverflow.com,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,stackexchange.com,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,quora.com,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,adobe.com,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,oracle.com,🌍 سایت‌های خارجی
-  - DOMAIN-SUFFIX,salesforce.com,🌍 سایت‌های خارجی
-
-  # === Iranian Sites & Banks ===
-  - DOMAIN-SUFFIX,ir,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-KEYWORD,iran,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,digikala.com,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,dkstatics.com,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,digikalacloud.com,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,digistyle.com,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,digipay.com,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,mydigipay.com,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,sheypoor.com,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,divar.ir,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,aparat.com,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,filimo.com,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,telewebion.com,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,namava.ir,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,snapp.ir,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,snapp.market,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,snappfood.ir,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,snapp-box.com,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,tapsi.ir,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,tapsi.cab,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,alibaba.ir,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,bazaar.ir,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,cafebazaar.ir,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,torob.com,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,emalls.ir,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,zoomit.ir,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,bmi.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,bankmellat.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,bpi.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,bki.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,bank-maskan.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,sb24.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,sapp.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,shaparak.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,sep.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,ecd.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,cbi.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,ansarbank.com,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,ba24.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,banksepah.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,edbi.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,bim.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,tourism-bank.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,izbank.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,ghbi.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,enbank.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,parsian-bank.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,karafarinbank.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,shahr-bank.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,sinabank.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,postbank.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,ttbank.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,rb24.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,rqbank.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,qmb.ir,🏦 بانک‌های ایران
-  - DOMAIN-SUFFIX,mci.ir,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,irancell.ir,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,rightel.ir,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,shatel.ir,🇮🇷 سایت‌های ایرانی
-  - DOMAIN-SUFFIX,asiatech.ir,🇮🇷 سایت‌های ایرانی
-  - IP-CIDR,2.144.0.0/14,🇮🇷 سایت‌های ایرانی,no-resolve
-  - IP-CIDR,5.22.0.0/15,🇮🇷 سایت‌های ایرانی,no-resolve
-  - IP-CIDR,5.52.0.0/14,🇮🇷 سایت‌های ایرانی,no-resolve
-  - IP-CIDR,5.72.0.0/13,🇮🇷 سایت‌های ایرانی,no-resolve
-  - IP-CIDR,31.7.64.0/18,🇮🇷 سایت‌های ایرانی,no-resolve
-  - IP-CIDR,37.129.0.0/16,🇮🇷 سایت‌های ایرانی,no-resolve
-  - IP-CIDR,37.156.0.0/14,🇮🇷 سایت‌های ایرانی,no-resolve
-  - IP-CIDR,78.38.0.0/15,🇮🇷 سایت‌های ایرانی,no-resolve
-  - IP-CIDR,81.91.128.0/17,🇮🇷 سایت‌های ایرانی,no-resolve
-  - IP-CIDR,185.208.172.0/22,🇮🇷 سایت‌های ایرانی,no-resolve
-
-  # === Final Rule ===
-  - MATCH,🐟 نهایی
-
-# === Rule Providers ===
-rule-providers:
-  ir:
-    type: http
-    format: yaml
-    behavior: domain
-    url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/ir.yaml"
-    path: ./ruleset/ir.yaml
-    interval: 86400
-  ads:
-    type: http
-    format: yaml
-    behavior: domain
-    url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/ads.yaml"
-    path: ./ruleset/ads.yaml
-    interval: 86400
-  malware:
-    type: http
-    format: yaml
-    behavior: domain
-    url: "https://raw.githubusercontent.com/Chocolate4U/Iran-clash-rules/release/malware.yaml"
-    path: ./ruleset/malware.yaml
-    interval: 86400
+external-controller: 0.0.0.0:9090
+external-ui: ./dashboard
+tproxy-port: 9898
+redir-port: 9797

@@ -2,6 +2,7 @@
 
 use App\Services\ThemeService;
 use Illuminate\Http\Request;
+use App\Http\Controllers\V1\Guest\PaymentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -37,7 +38,7 @@ Route::get('/', function (Request $request) {
     return view('theme::' . config('v2board.frontend_theme', 'default') . '.dashboard', $renderParams);
 });
 
-//TODO:: 兼容
+//TODO:: سازگاری با نسخه‌های قدیم
 Route::get('/' . config('v2board.secure_path', config('v2board.frontend_admin_path', hash('crc32b', config('app.key')))), function () {
     return view('admin', [
         'title' => config('v2board.app_name', 'V2Board'),
@@ -54,3 +55,66 @@ Route::get('/' . config('v2board.secure_path', config('v2board.frontend_admin_pa
 if (!empty(config('v2board.subscribe_path'))) {
     Route::get(config('v2board.subscribe_path'), 'V1\\Client\\ClientController@subscribe')->middleware('client');
 }
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 💳 Payment Routes
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+// مسیر اصلی notify (پشتیبانی از Payment Tracking)
+Route::post('payment/notify/{method}/{uuid}', [PaymentController::class, 'notify'])
+    ->name('payment.notify')
+    ->middleware('throttle:60,1');
+
+// مسیرهای legacy (سازگاری با نسخه‌های قدیم)
+Route::post('/api/v1/guest/payment/callback/aghayehpardakht', [PaymentController::class, 'aghayehpardakhtCallback']);
+Route::post('/api/v1/guest/payment/callback/zibal', [PaymentController::class, 'zibalCallback']);
+Route::post('payment/notify/zibal/{uuid}', [PaymentController::class, 'notify'])->name('payment.notify.zibal');
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 📊 Payment Tracking API (اختیاری - برای مانیتورینگ)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+/*
+// فعال کردن این بخش اختیاری است - برای Admin Panel
+Route::prefix('api/admin/payment-tracks')->middleware(['auth', 'admin'])->group(function () {
+    
+    // دریافت آمار payment tracks
+    Route::get('/statistics', function () {
+        return response()->json(\App\Models\PaymentTrack::getStatistics());
+    });
+
+    // لیست trackId های اخیر
+    Route::get('/list', function () {
+        $tracks = \App\Models\PaymentTrack::latest()
+            ->limit(100)
+            ->get(['id', 'track_id', 'order_id', 'user_id', 'amount', 'is_used', 'created_at']);
+        
+        return response()->json($tracks);
+    });
+
+    // پاکسازی دستی trackId های قدیمی
+    Route::post('/cleanup', function () {
+        $count = \App\Models\PaymentTrack::cleanup(24);
+        return response()->json([
+            'success' => true,
+            'deleted_count' => $count,
+            'message' => "✓ {$count} trackId قدیمی حذف شد"
+        ]);
+    });
+    
+    // بررسی معتبر بودن یک trackId
+    Route::get('/validate/{trackId}', function ($trackId) {
+        $isValid = \App\Models\PaymentTrack::isValid($trackId);
+        $track = \App\Models\PaymentTrack::getByTrackId($trackId);
+        
+        return response()->json([
+            'track_id' => $trackId,
+            'is_valid' => $isValid,
+            'exists' => $track !== null,
+            'is_used' => $track ? $track->is_used : null,
+            'created_at' => $track ? $track->created_at->format('Y-m-d H:i:s') : null,
+            'used_at' => $track && $track->used_at ? $track->used_at->format('Y-m-d H:i:s') : null,
+        ]);
+    });
+});
+*/

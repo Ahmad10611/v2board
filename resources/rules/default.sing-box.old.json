@@ -8,16 +8,16 @@
                 "server": "local"
             }, 
             {
-                "clash_mode": "全局代理",
+                "clash_mode": "پراکسی سراسری",
                 "server": "remote"
             },
             {
-                "clash_mode": "关闭代理",
+                "clash_mode": "خاموش کردن پروکسی",
                 "server": "local"
             },
             {
                 "rule_set": [
-                    "geosite-cn"
+                    "geosite-ir"
                 ],
                 "server": "local"
             },
@@ -31,11 +31,11 @@
         "servers": [
             {
                 "address": "1.1.1.1",
-                "detour": "节点选择",
+                "detour": "دکتر‌موبایل‌جایزان",
                 "tag": "remote"
             },
             {
-                "address": "https://223.5.5.5/dns-query",
+                "address": "8.8.8.8",
                 "detour": "direct",
                 "tag": "local"
             },
@@ -53,7 +53,7 @@
             "enabled": true
         },
         "clash_api": {
-            "default_mode": "海外代理",
+            "default_mode": "پراکسی بین‌المللی",
             "external_controller": "127.0.0.1:9090",
             "secret": ""
         }
@@ -69,7 +69,7 @@
             ],
             "mtu": 9000,
             "sniff_override_destination": true,
-            "stack": "system",
+            "stack": "gvisor",
             "strict_route": true,
             "type": "tun"
         },
@@ -97,14 +97,14 @@
     "outbounds": [
         {
             "type": "selector",
-            "tag": "节点选择",
+            "tag": "دکتر‌موبایل‌جایزان",
             "outbounds": [
-                "自动选择"
+                "انتخاب خودکار"
             ]
         },
         {
             "type": "urltest",
-            "tag": "自动选择",
+            "tag": "انتخاب خودکار",
             "outbounds": []
         },
         {
@@ -116,29 +116,168 @@
         "auto_detect_interface": true,
         "rules": [
             {
-				"action": "sniff"
-			},
-			{
-				"protocol": "dns",
-				"action": "hijack-dns"
-			},
-			{
-                "clash_mode": "关闭代理",
+                "action": "sniff"
+            },
+            {
+                "protocol": "dns",
+                "action": "hijack-dns"
+            },
+            {
+                "protocol": "stun",
+                "outbound": "دکتر‌موبایل‌جایزان"
+            },
+            {
+                "network": "udp",
+                "port": [3478, 3479, 3480, 3481, 4244, 5222, 5223, 5228, 5242, 5349, 19302, 19305],
+                "outbound": "دکتر‌موبایل‌جایزان"
+            },
+            {
+                "clash_mode": "خاموش کردن پروکسی",
                 "outbound": "direct"
             },
             {
-                "clash_mode": "全局代理",
-                "outbound": "节点选择"
+                "clash_mode": "پراکسی سراسری",
+                "outbound": "دکتر‌موبایل‌جایزان"
+            },
+            {
+                "domain": [
+                    "gitlab.com",
+                    "gitlab.io",
+                    "gitlabusercontent.com",
+                    "shaparak.ir",
+                    "sep.ir",
+                    "pec.ir",
+                    "pecco.com",
+                    "sadadpsp.ir",
+                    "behpardakht.com",
+                    "zarinpal.com",
+                    "pay.ir",
+                    "idpay.ir",
+                    "nextpay.org",
+                    "jibit.ir",
+                    "mydigipay.com",
+                    "digikala.com",
+                    "snapp.ir",
+                    "tap30.org",
+                    "alibaba.ir",
+                    "flightio.com",
+                    "mrbilit.com",
+                    "filmnet.ir",
+                    "namava.ir",
+                    "telewebion.com",
+                    "aparat.com",
+                    "aparatapp.com",
+                    "cafebazaar.ir",
+                    "myket.ir",
+                    "balad.ir",
+                    "neshan.org"
+                ],
+                "outbound": "direct"
+            },
+            {
+                "domain_suffix": [
+                    ".ac.ir",
+                    "medu.ir",
+                    "roshd.ir"
+                ],
+                "outbound": "direct"
             },
             {
                 "rule_set": [
-                    "geosite-cn","geoip-cn"
+                    "geosite-ir","geoip-ir"
                 ],
                 "outbound": "direct"
             },
             {
                 "ip_is_private": true,
                 "outbound": "direct"
+            },
+            {
+                "domain": [
+                    "youtube.com",
+                    "youtubei.googleapis.com",
+                    "googlevideo.com",
+                    "ytimg.com",
+                    "ggpht.com",
+                    "youtu.be",
+                    "instagram.com",
+                    "cdninstagram.com",
+                    "facebook.com",
+                    "facebook.net",
+                    "fbcdn.net",
+                    "fb.com",
+                    "fb.me",
+                    "fbsbx.com",
+                    "messenger.com",
+                    "google.com",
+                    "googleapis.com",
+                    "googleusercontent.com",
+                    "gstatic.com",
+                    "googleadservices.com",
+                    "googlesyndication.com",
+                    "googletagmanager.com",
+                    "google-analytics.com",
+                    "doubleclick.net",
+                    "firebase.com",
+                    "firebaseio.com",
+                    "twitter.com",
+                    "twimg.com",
+                    "t.co",
+                    "x.com",
+                    "telegram.org",
+                    "telegram.me",
+                    "t.me",
+                    "tdesktop.com",
+                    "telegra.ph",
+                    "telesco.pe",
+                    "linkedin.com",
+                    "licdn.com",
+                    "pinterest.com",
+                    "pinimg.com",
+                    "reddit.com",
+                    "redditmedia.com",
+                    "redditstatic.com",
+                    "tiktok.com",
+                    "tiktokcdn.com",
+                    "tiktokv.com",
+                    "snapchat.com",
+                    "sc-cdn.net",
+                    "github.com",
+                    "githubusercontent.com",
+                    "github.io",
+                    "githubassets.com",
+                    "stackoverflow.com",
+                    "stackexchange.com",
+                    "docker.com",
+                    "docker.io",
+                    "npmjs.org",
+                    "npmjs.com",
+                    "pypi.org",
+                    "pythonhosted.org",
+                    "openai.com",
+                    "chatgpt.com",
+                    "claude.ai",
+                    "anthropic.com",
+                    "bard.google.com",
+                    "midjourney.com",
+                    "huggingface.co",
+                    "netflix.com",
+                    "nflxext.com",
+                    "nflximg.com",
+                    "nflxvideo.net",
+                    "spotify.com",
+                    "scdn.co",
+                    "soundcloud.com",
+                    "twitch.tv",
+                    "ttvnw.net",
+                    "vimeo.com",
+                    "vimeocdn.com",
+                    "udemy.com",
+                    "coursera.org",
+                    "edx.org",
+                    "khanacademy.org"
+                ],
+                "outbound": "دکتر‌موبایل‌جایزان"
             },
             {
                 "rule_set": [
@@ -149,25 +288,25 @@
         ],
         "rule_set": [
             {
-              "tag": "geosite-cn",
+              "tag": "geosite-ir",
               "type": "remote",
               "format": "binary",
-              "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-cn.srs",
-              "download_detour": "节点选择"
+              "url": "https://raw.githubusercontent.com/Chocolate4U/Iran-sing-box-rules/rule-set/geosite-ir.srs",
+              "download_detour": "direct"
             },
             {
                 "tag": "category-ads-all",
                 "type": "remote",
                 "format": "binary",
                 "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-category-ads-all.srs",
-                "download_detour": "节点选择"
+                "download_detour": "direct"
             },
             {
-                "tag": "geoip-cn",
+                "tag": "geoip-ir",
                 "type": "remote",
                 "format": "binary",
-                "url": "https://raw.githubusercontent.com/Loyalsoldier/geoip/release/srs/cn.srs",
-                "download_detour": "节点选择"
+                "url": "https://raw.githubusercontent.com/Chocolate4U/Iran-sing-box-rules/rule-set/geoip-ir.srs",
+                "download_detour": "direct"
             }
         ]
     }

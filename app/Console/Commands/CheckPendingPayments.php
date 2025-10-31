@@ -23,7 +23,7 @@ class CheckPendingPayments extends Command
                             {--max-inquiry-fails=3 : Max inquiry failures before force refund}
                             {--debug : Show detailed output}';
 
-    protected $description = 'Check and recover pending payments v2.1';
+    protected $description = 'Check and recover pending payments v2.2 - Fixed cancelled handling';
 
     public function handle()
     {
@@ -38,7 +38,7 @@ class CheckPendingPayments extends Command
 
         if ($debug) {
             $this->info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-            $this->info("🔍 Payment Recovery System v2.1");
+            $this->info("🔍 Payment Recovery System v2.2");
             $this->info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
             $this->info("Refund after: {$refundAfter} min");
             $this->info("Check interval: {$checkInterval} min");
@@ -54,6 +54,7 @@ class CheckPendingPayments extends Command
             'verified' => 0,
             'refunded' => 0,
             'expired' => 0,
+            'cancelled' => 0, // 🆕 Added counter
             'failed' => 0,
             'skipped' => 0,
         ];
@@ -243,10 +244,46 @@ class CheckPendingPayments extends Command
                         }
                     }
                 } 
-                // Status -1 or 0 = unsuccessful or pending at Zibal
-                else if (in_array($status, [-1, 0])) {
+                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                // 🆕 FIXED: Status -1 = Cancelled at Zibal (separate from 0)
+                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                else if ($status === -1) {
                     if ($debug) {
-                        $this->line("  ⏭ Payment not successful at Zibal (status: {$status})");
+                        $this->line("  ⏭ Payment cancelled at Zibal (status: -1)");
+                    }
+
+                    // Mark order as cancelled if check-cancelled flag is set
+                    if ($checkCancelled && $order->status != 1 && $order->status != 3) {
+                        try {
+                            $order->status = 3; // Mark as cancelled
+                            $order->save();
+                            
+                            if ($debug) {
+                                $this->info("  ✓ Order marked as cancelled");
+                            }
+                            
+                            // Delete unused track to prevent future checks
+                            $track = PaymentTrack::where('trade_no', $order->trade_no)->first();
+                            if ($track && !$track->is_used) {
+                                $track->delete();
+                                if ($debug) {
+                                    $this->line("  ✓ Unused track deleted");
+                                }
+                            }
+                            
+                            $stats['cancelled']++;
+                        } catch (\Exception $e) {
+                            $this->error("  ✗ Failed to mark as cancelled: " . $e->getMessage());
+                            $stats['failed']++;
+                        }
+                    } else {
+                        $stats['skipped']++;
+                    }
+                } 
+                // Status 0 = pending at Zibal (separate from -1)
+                else if ($status === 0) {
+                    if ($debug) {
+                        $this->line("  ⏭ Payment still pending at Zibal (status: 0)");
                     }
 
                     // Expire old pending orders
@@ -303,6 +340,7 @@ class CheckPendingPayments extends Command
             $this->line("  Verified: {$stats['verified']}");
             $this->line("  Refunded: {$stats['refunded']}");
             $this->line("  Expired: {$stats['expired']}");
+            $this->line("  Cancelled: {$stats['cancelled']}"); // 🆕 New line
             $this->line("  Skipped: {$stats['skipped']}");
             $this->line("  Failed: {$stats['failed']}");
             $this->info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");

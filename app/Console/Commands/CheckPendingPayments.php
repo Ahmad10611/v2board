@@ -23,7 +23,7 @@ class CheckPendingPayments extends Command
                             {--max-inquiry-fails=3 : Max inquiry failures before force refund}
                             {--debug : Show detailed output}';
 
-    protected $description = 'Check and recover pending payments v2.2 - Fixed cancelled handling';
+    protected $description = 'Check and recover pending payments v2.3 - Fixed status 3 & 4 handling';
 
     public function handle()
     {
@@ -38,7 +38,7 @@ class CheckPendingPayments extends Command
 
         if ($debug) {
             $this->info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-            $this->info("🔍 Payment Recovery System v2.2");
+            $this->info("🔍 Payment Recovery System v2.3");
             $this->info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
             $this->info("Refund after: {$refundAfter} min");
             $this->info("Check interval: {$checkInterval} min");
@@ -54,7 +54,7 @@ class CheckPendingPayments extends Command
             'verified' => 0,
             'refunded' => 0,
             'expired' => 0,
-            'cancelled' => 0, // 🆕 Added counter
+            'cancelled' => 0,
             'failed' => 0,
             'skipped' => 0,
         ];
@@ -160,7 +160,7 @@ class CheckPendingPayments extends Command
                 $inquiry = $zibal->inquiry($trackId);
 
                 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-                // ✅ FIX #1: Track inquiry failures
+                // ✅ Track inquiry failures
                 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
                 $failCountKey = "inquiry_fail_{$order->id}";
                 
@@ -204,7 +204,9 @@ class CheckPendingPayments extends Command
                     }
                 }
 
+                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
                 // Status 1 or 2 = successful payment at Zibal
+                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
                 if (in_array($status, [1, 2])) {
                     if ($debug) {
                         $this->info("  💰 Payment successful at Zibal!");
@@ -245,24 +247,23 @@ class CheckPendingPayments extends Command
                     }
                 } 
                 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-                // 🆕 FIXED: Status -1 = Cancelled at Zibal (separate from 0)
+                // Status -1 = Payment not initiated/cancelled before gateway
                 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
                 else if ($status === -1) {
                     if ($debug) {
-                        $this->line("  ⏭ Payment cancelled at Zibal (status: -1)");
+                        $this->line("  🚫 Payment not initiated (status: -1)");
                     }
 
-                    // Mark order as cancelled if check-cancelled flag is set
-                    if ($checkCancelled && $order->status != 1 && $order->status != 3) {
+                    if ($checkCancelled && $order->status == 0) {
                         try {
-                            $order->status = 3; // Mark as cancelled
+                            $order->status = 2; // cancelled (no money charged)
                             $order->save();
                             
                             if ($debug) {
                                 $this->info("  ✓ Order marked as cancelled");
                             }
                             
-                            // Delete unused track to prevent future checks
+                            // Delete unused track
                             $track = PaymentTrack::where('trade_no', $order->trade_no)->first();
                             if ($track && !$track->is_used) {
                                 $track->delete();
@@ -280,10 +281,89 @@ class CheckPendingPayments extends Command
                         $stats['skipped']++;
                     }
                 } 
-                // Status 0 = pending at Zibal (separate from -1)
+                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                // 🆕 Status 3 = Cancelled by user at gateway
+                // CRITICAL: No money was charged, so NO REFUND needed
+                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                else if ($status === 3) {
+                    if ($debug) {
+                        $this->line("  🚫 Payment cancelled by user at gateway (status: 3)");
+                    }
+
+                    // Only mark as cancelled - NO WALLET REFUND
+                    if ($order->status == 0) {
+                        try {
+                            $order->status = 2; // cancelled (no money charged)
+                            $order->save();
+                            
+                            if ($debug) {
+                                $this->info("  ✓ Order marked as cancelled (no refund needed)");
+                            }
+                            
+                            // Delete unused track to prevent future checks
+                            $track = PaymentTrack::where('trade_no', $order->trade_no)->first();
+                            if ($track && !$track->is_used) {
+                                $track->delete();
+                                if ($debug) {
+                                    $this->line("  ✓ Unused track deleted");
+                                }
+                            }
+                            
+                            $stats['cancelled']++;
+                        } catch (\Exception $e) {
+                            $this->error("  ✗ Failed to cancel: " . $e->getMessage());
+                            $stats['failed']++;
+                        }
+                    } else {
+                        if ($debug) {
+                            $this->line("  ⏭ Already processed (status={$order->status})");
+                        }
+                        $stats['skipped']++;
+                    }
+                } 
+                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                // 🆕 Status 4 = Payment failed/returned
+                // CRITICAL: Money was not successfully charged, NO REFUND
+                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                else if ($status === 4) {
+                    if ($debug) {
+                        $this->line("  💳 Payment failed/returned at gateway (status: 4)");
+                    }
+
+                    // Mark as cancelled - NO WALLET REFUND
+                    if ($order->status == 0) {
+                        try {
+                            $order->status = 2; // cancelled (payment failed)
+                            $order->save();
+                            
+                            if ($debug) {
+                                $this->info("  ✓ Order marked as cancelled (payment failed)");
+                            }
+                            
+                            // Delete unused track
+                            $track = PaymentTrack::where('trade_no', $order->trade_no)->first();
+                            if ($track && !$track->is_used) {
+                                $track->delete();
+                                if ($debug) {
+                                    $this->line("  ✓ Unused track deleted");
+                                }
+                            }
+                            
+                            $stats['cancelled']++;
+                        } catch (\Exception $e) {
+                            $this->error("  ✗ Failed to cancel: " . $e->getMessage());
+                            $stats['failed']++;
+                        }
+                    } else {
+                        $stats['skipped']++;
+                    }
+                }
+                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                // Status 0 = Still pending at Zibal
+                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
                 else if ($status === 0) {
                     if ($debug) {
-                        $this->line("  ⏭ Payment still pending at Zibal (status: 0)");
+                        $this->line("  ⏳ Payment still pending at Zibal (status: 0)");
                     }
 
                     // Expire old pending orders
@@ -292,15 +372,15 @@ class CheckPendingPayments extends Command
                         $stats['expired']++;
                     }
                 } 
-                // Unknown status
+                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                // Unknown status - only refund if payment was successful
+                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
                 else {
                     if ($debug) {
                         $this->warn("  ⚠ Unknown Zibal status: {$status}");
                     }
                     
-                    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-                    // ✅ FIX #2: Unknown status + old order → force refund
-                    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                    // Only refund if order is old enough AND we can't determine status
                     if ($orderAge >= $refundAfter) {
                         if ($debug) {
                             $this->warn("  ⚠ Unknown status + old order → forcing refund...");
@@ -340,7 +420,7 @@ class CheckPendingPayments extends Command
             $this->line("  Verified: {$stats['verified']}");
             $this->line("  Refunded: {$stats['refunded']}");
             $this->line("  Expired: {$stats['expired']}");
-            $this->line("  Cancelled: {$stats['cancelled']}"); // 🆕 New line
+            $this->line("  Cancelled: {$stats['cancelled']}");
             $this->line("  Skipped: {$stats['skipped']}");
             $this->line("  Failed: {$stats['failed']}");
             $this->info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
@@ -414,10 +494,8 @@ class CheckPendingPayments extends Command
             $user->balance += $order->total_amount;
             $user->save();
 
-            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            // ✅ FIX #3: Set status = 4 (refunded) not 2 (cancelled)
-            // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-            $order->status = 4; // refunded to wallet
+            // Set status = 4 (refunded to wallet)
+            $order->status = 4;
             $order->save();
 
             // Mark trackId as used

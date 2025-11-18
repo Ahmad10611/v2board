@@ -153,6 +153,24 @@ class Kernel extends ConsoleKernel
             });
 
         /**
+         * ⏰ Expire old unused payment tracks at 2 AM
+         * - Marks unused tracks >48h as used (expired)
+         * - Prevents old tracks from being checked in recovery
+         * - Runs before cleanup (at 3 AM) to prepare tracks for deletion
+         */
+        $schedule->call(function () {
+            \App\Models\PaymentTrack::expireOld(48);
+        })
+            ->dailyAt('02:00')
+            ->name('expire-old-tracks')
+            ->onSuccess(function () {
+                Log::channel('payment')->info('✓ Old tracks expired');
+            })
+            ->onFailure(function () {
+                Log::channel('payment')->error('✗ Expire old tracks failed');
+            });
+
+        /**
          * 🧹 Cleanup old payment tracks daily at 3 AM
          * - Removes trackIds older than 48 hours
          * - Optimizes database performance

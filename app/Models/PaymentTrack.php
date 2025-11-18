@@ -85,6 +85,44 @@ class PaymentTrack extends Model
         }
     }
 
+    /**
+     * Expire old unused payment tracks (mark as used without deleting)
+     * Used to prevent old tracks from being checked repeatedly in recovery
+     * 
+     * @param int $hoursOld Tracks older than this will be expired
+     * @return int Number of expired tracks
+     */
+    public static function expireOld(int $hoursOld = 48): int
+    {
+        try {
+            $cutoffTime = now()->subHours($hoursOld);
+            
+            $expired = self::where('is_used', false)
+                ->where('created_at', '<', $cutoffTime)
+                ->update([
+                    'is_used' => true,
+                    'used_at' => now(),
+                ]);
+            
+            if ($expired > 0) {
+                Log::channel('payment')->info('✓ Old payment tracks expired', [
+                    'count' => $expired,
+                    'hours_old' => $hoursOld,
+                    'cutoff_time' => $cutoffTime->format('Y-m-d H:i:s'),
+                ]);
+            }
+            
+            return $expired;
+            
+        } catch (\Exception $e) {
+            Log::channel('payment')->error('✗ Expire old tracks failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return 0;
+        }
+    }
+
     public static function isValid(string $trackId): bool
     {
         return self::where('track_id', $trackId)

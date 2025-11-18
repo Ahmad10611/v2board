@@ -23,7 +23,7 @@ class CheckPendingPayments extends Command
                             {--max-inquiry-fails=3 : Max inquiry failures before force refund}
                             {--debug : Show detailed output}';
 
-    protected $description = 'Check and recover pending payments v2.3 - Fixed status 3 & 4 handling';
+    protected $description = 'Check and recover pending payments v2.4 - Optimized query with track filtering';
 
     public function handle()
     {
@@ -38,7 +38,7 @@ class CheckPendingPayments extends Command
 
         if ($debug) {
             $this->info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-            $this->info("🔍 Payment Recovery System v2.3");
+            $this->info("🔍 Payment Recovery System v2.4");
             $this->info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
             $this->info("Refund after: {$refundAfter} min");
             $this->info("Check interval: {$checkInterval} min");
@@ -74,14 +74,23 @@ class CheckPendingPayments extends Command
             $this->info("Checking statuses: " . implode(', ', $statusesToCheck));
         }
 
-        // Get orders to check
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // 🆕 OPTIMIZED: Only fetch orders with active payment tracks
+        // This prevents checking 3000+ cancelled orders without tracks
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         $pendingOrders = Order::whereIn('status', $statusesToCheck)
             ->where('created_at', '>=', now()->subHours($hours))
+            ->whereExists(function($query) {
+                $query->select(DB::raw(1))
+                      ->from('payment_tracks')
+                      ->whereColumn('payment_tracks.trade_no', 'v2_order.trade_no')
+                      ->where('payment_tracks.is_used', 0);
+            })
             ->orderBy('created_at', 'desc')
             ->get();
-
+			
         if ($debug) {
-            $this->info("\nFound {$pendingOrders->count()} orders to check");
+            $this->info("\nFound {$pendingOrders->count()} orders with active tracks");
             $this->info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
         }
 
@@ -263,12 +272,12 @@ class CheckPendingPayments extends Command
                                 $this->info("  ✓ Order marked as cancelled");
                             }
                             
-                            // Delete unused track
+                            // Mark track as used to prevent future checks
                             $track = PaymentTrack::where('trade_no', $order->trade_no)->first();
                             if ($track && !$track->is_used) {
-                                $track->delete();
+                                $track->markAsUsed();
                                 if ($debug) {
-                                    $this->line("  ✓ Unused track deleted");
+                                    $this->line("  ✓ Track marked as used");
                                 }
                             }
                             
@@ -300,12 +309,12 @@ class CheckPendingPayments extends Command
                                 $this->info("  ✓ Order marked as cancelled (no refund needed)");
                             }
                             
-                            // Delete unused track to prevent future checks
+                            // Mark track as used to prevent future checks
                             $track = PaymentTrack::where('trade_no', $order->trade_no)->first();
                             if ($track && !$track->is_used) {
-                                $track->delete();
+                                $track->markAsUsed();
                                 if ($debug) {
-                                    $this->line("  ✓ Unused track deleted");
+                                    $this->line("  ✓ Track marked as used");
                                 }
                             }
                             
@@ -340,12 +349,12 @@ class CheckPendingPayments extends Command
                                 $this->info("  ✓ Order marked as cancelled (payment failed)");
                             }
                             
-                            // Delete unused track
+                            // Mark track as used to prevent future checks
                             $track = PaymentTrack::where('trade_no', $order->trade_no)->first();
                             if ($track && !$track->is_used) {
-                                $track->delete();
+                                $track->markAsUsed();
                                 if ($debug) {
-                                    $this->line("  ✓ Unused track deleted");
+                                    $this->line("  ✓ Track marked as used");
                                 }
                             }
                             

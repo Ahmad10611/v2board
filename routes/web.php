@@ -3,6 +3,7 @@
 use App\Services\ThemeService;
 use Illuminate\Http\Request;
 use App\Http\Controllers\V1\Guest\PaymentController;
+use App\Http\Controllers\V1\Passport\GoogleAuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -118,3 +119,18 @@ Route::prefix('api/admin/payment-tracks')->middleware(['auth', 'admin'])->group(
     });
 });
 */
+// ✅ تست API
+Route::get('/api/test', function() {
+    return response()->json([
+        'success' => true,
+        'message' => 'Backend API is working!',
+        'server' => 'ddr.drmobilejayzan.info',
+        'time' => now()->toDateTimeString()
+    ]);
+});
+Route::group(['prefix' => 'api/v1/passport/auth/google'], function () {
+    Route::get('/url', [GoogleAuthController::class, 'getLoginUrl']);
+    Route::match(['get', 'post'], '/callback', [GoogleAuthController::class, 'callback']); // مهم!
+});
+Route::post('/api/v1/user/email-by-token', 'V1\User\UserController@getEmailByToken')
+    ->middleware('throttle:10,1'); // محدودیت: 10 درخواست در دقیقه

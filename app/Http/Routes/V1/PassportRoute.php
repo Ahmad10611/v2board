@@ -20,6 +20,8 @@ class PassportRoute
             // Comm
             $router->post('/comm/sendEmailVerify', 'V1\\Passport\\CommController@sendEmailVerify');
             $router->post('/comm/pv', 'V1\\Passport\\CommController@pv');
+			$router->get('/auth/google/url', 'V1\\Passport\\GoogleAuthController@getLoginUrl');
+			$router->post('/auth/google/callback', 'V1\\Passport\\GoogleAuthController@callback');
         });
     }
 }

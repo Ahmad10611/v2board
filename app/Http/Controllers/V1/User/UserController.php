@@ -23,6 +23,89 @@ use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
+    /**
+     * دریافت ایمیل کاربر با استفاده از توکن UUID
+     * این endpoint برای یافتن ایمیل کاربر از روی توکن اشتراک استفاده می‌شود
+     */
+    public function getEmailByToken(Request $request)
+    {
+        // دریافت توکن از request
+        $token = $request->input('token');
+        
+        // بررسی وجود توکن
+        if (!$token) {
+            abort(400, __('Token is required'));
+        }
+        
+        // بررسی فرمت صحیح توکن (UUID 32 کاراکتری)
+        if (!preg_match('/^[a-f0-9]{32}$/i', $token)) {
+            abort(400, __('Invalid token format'));
+        }
+        
+        // کش کردن نتیجه برای 60 ثانیه (جلوگیری از spam)
+        $cacheKey = 'TOKEN_TO_EMAIL_' . $token;
+        
+        $result = Cache::remember($cacheKey, 60, function() use ($token) {
+            // جستجوی کاربر با توکن
+            $user = User::where('token', $token)
+                ->select(['id', 'email', 'banned'])
+                ->first();
+            
+            if (!$user) {
+                return null;
+            }
+            
+            // بررسی مسدود بودن کاربر
+            if ($user->banned) {
+                return ['banned' => true];
+            }
+            
+            return [
+                'email' => $user->email,
+                'masked_email' => $this->maskEmail($user->email),
+                'banned' => false
+            ];
+        });
+        
+        // اگر کاربر پیدا نشد
+        if ($result === null) {
+            abort(404, __('User not found'));
+        }
+        
+        // اگر کاربر مسدود است
+        if ($result['banned']) {
+            abort(403, __('User account is banned'));
+        }
+        
+        return response([
+            'data' => [
+                'email' => $result['email'],
+                'masked_email' => $result['masked_email']
+            ]
+        ]);
+    }
+
+    /**
+     * ماسک کردن ایمیل برای امنیت بیشتر
+     * مثال: test@gmail.com → t***@gmail.com
+     */
+    private function maskEmail($email)
+    {
+        $parts = explode('@', $email);
+        if (count($parts) !== 2) {
+            return $email;
+        }
+        
+        $name = $parts[0];
+        $domain = $parts[1];
+        
+        if (strlen($name) <= 2) {
+            return $name . '***@' . $domain;
+        }
+        
+        return substr($name, 0, 1) . '***' . substr($name, -1) . '@' . $domain;
+    }
+
     public function getActiveSession(Request $request)
     {
         $user = User::find($request->user['id']);

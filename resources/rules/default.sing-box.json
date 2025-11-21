@@ -302,7 +302,7 @@
                 "tag": "geoip-ir",
                 "type": "remote",
                 "format": "binary",
-                "url": "https://raw.githubusercontent.com/Chocolate4U/Iran-sing-box-rules/rule-set/geoip-ir.srs",
+                "url": "https://cdn.jsdelivr.net/gh/Chocolate4U/Iran-sing-box-rules@rule-set/geoip-ir.srs",
                 "download_detour": "DIRECT",
                 "update_interval": "168h"
             },
@@ -310,7 +310,7 @@
                 "tag": "geosite-ir",
                 "type": "remote",
                 "format": "binary",
-                "url": "https://raw.githubusercontent.com/Chocolate4U/Iran-sing-box-rules/rule-set/geosite-ir.srs",
+                "url": "https://cdn.jsdelivr.net/gh/Chocolate4U/Iran-sing-box-rules@rule-set/geosite-ir.srs",
                 "download_detour": "DIRECT",
                 "update_interval": "168h"
             },
@@ -318,7 +318,7 @@
                 "tag": "category-ads-all",
                 "type": "remote",
                 "format": "binary",
-                "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-category-ads-all.srs",
+                "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-category-ads-all.srs",
                 "download_detour": "DIRECT",
                 "update_interval": "168h"
             }

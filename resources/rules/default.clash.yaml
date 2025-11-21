@@ -11,6 +11,7 @@ ipv6: false
 log-level: info
 
 external-controller: 0.0.0.0:9090
+secret: ""
 
 tcp-concurrent: true
 unified-delay: false
@@ -21,9 +22,9 @@ global-client-fingerprint: chrome
 geodata-mode: false
 geodata-loader: standard
 geox-url:
-  geoip: "https://cdn.jsdelivr.net/gh/Chocolate4U/Iran-v2ray-rules@release/geoip.dat"
-  geosite: "https://cdn.jsdelivr.net/gh/Chocolate4U/Iran-v2ray-rules@release/geosite.dat"
-  mmdb: "https://cdn.jsdelivr.net/gh/Loyalsoldier/geoip@release/Country.mmdb"
+  geoip: "https://raw.githubusercontent.com/Chocolate4U/Iran-v2ray-rules/release/geoip.dat"
+  geosite: "https://raw.githubusercontent.com/Chocolate4U/Iran-v2ray-rules/release/geosite.dat"
+  mmdb: "https://raw.githubusercontent.com/Chocolate4U/Iran-v2ray-rules/release/country.mmdb"
 
 profile:
   store-selected: true
@@ -61,18 +62,67 @@ tun:
     - fe80::/10
     - ff00::/8
     - fec0::/10
-
 dns:
   enable: true
-  prefer-h3: true
-  default-nameserver: [8.8.8.8, 1.1.1.1]
+  ipv6: false
+  listen: 0.0.0.0:1053
   enhanced-mode: fake-ip
-  nameserver:
-    - 8.8.8.8
+  fake-ip-range: 198.18.0.0/15
+  
+  default-nameserver:
+    - 178.22.122.100
     - 1.1.1.1
-  fake-ip-filter:
-    - "*.lan"
+  
+  nameserver:
+    - https://1.1.1.1/dns-query
+    - https://dns.google/dns-query
+    - https://dns.quad9.net/dns-query
+    - 1.1.1.1
+  
+  proxy-server-nameserver:
+    - https://1.1.1.1/dns-query
+    - 1.1.1.1
+  
+  nameserver-policy:
+    # سایت‌های ایرانی
+    '+.ir': [178.22.122.100, 10.202.10.102]
+    '+.iran': [178.22.122.100, 10.202.10.102]
+    'geosite:category-ir': [178.22.122.100, 10.202.10.102]
     
+    # بانک‌ها و پرداخت
+    '+.shaparak.ir': 178.22.122.100
+    '+.sep.ir': 178.22.122.100
+    '+.bmi.ir': 178.22.122.100
+    
+    # سایت‌های خارجی از proxy
+    'geosite:geolocation-!cn': [https://1.1.1.1/dns-query, https://dns.google/dns-query]
+  
+  fallback:
+    - https://dns.quad9.net/dns-query
+    - tls://dns.google:853
+  
+  fallback-filter:
+    geoip: true
+    geoip-code: IR
+    ipcidr:
+      - 0.0.0.0/8
+      - 10.0.0.0/8
+      - 100.64.0.0/10
+      - 127.0.0.0/8
+      - 169.254.0.0/16
+      - 172.16.0.0/12
+      - 192.0.0.0/24
+      - 192.168.0.0/16
+      - 224.0.0.0/4
+      - 240.0.0.0/4
+  
+  fake-ip-filter:
+    - '*.lan'
+    - '*.local'
+    - '*.ir'
+    - '+.pool.ntp.org'
+    - 'time*.*.com'
+
 sniffer:
   enable: true
   parse-pure-ip: true
@@ -237,6 +287,6 @@ rule-providers:
     type: http
     format: yaml
     behavior: classical
-    url: https://github.com/SamadiPour/iran-hosted-domains/releases/latest/download/clash_rules_other.yaml
+    url: https://github.com/ygbkm/clash-rules-iran/releases/latest/download/rules.yaml
     path: ./ruleset/iran.yaml
     interval: 86400

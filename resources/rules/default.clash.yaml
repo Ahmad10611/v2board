@@ -22,9 +22,9 @@ global-client-fingerprint: chrome
 geodata-mode: false
 geodata-loader: standard
 geox-url:
-  geoip: "https://raw.githubusercontent.com/Chocolate4U/Iran-v2ray-rules/release/geoip.dat"
-  geosite: "https://raw.githubusercontent.com/Chocolate4U/Iran-v2ray-rules/release/geosite.dat"
-  mmdb: "https://raw.githubusercontent.com/Chocolate4U/Iran-v2ray-rules/release/country.mmdb"
+  geoip: "https://cdn.jsdelivr.net/gh/Chocolate4U/Iran-v2ray-rules@release/geoip.dat"
+  geosite: "https://cdn.jsdelivr.net/gh/Chocolate4U/Iran-v2ray-rules@release/geosite.dat"
+  mmdb: "https://cdn.jsdelivr.net/gh/Loyalsoldier/geoip@release/Country.mmdb"
 
 profile:
   store-selected: true
@@ -287,6 +287,6 @@ rule-providers:
     type: http
     format: yaml
     behavior: classical
-    url: https://github.com/ygbkm/clash-rules-iran/releases/latest/download/rules.yaml
+    url: https://github.com/SamadiPour/iran-hosted-domains/releases/latest/download/clash_rules_other.yaml
     path: ./ruleset/iran.yaml
     interval: 86400

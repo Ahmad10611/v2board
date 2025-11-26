@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\User;
 use App\Models\PaymentTrack;
 use App\Payments\ZibalPayment;
+use App\Services\TelegramService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -21,9 +22,14 @@ class CheckPendingPayments extends Command
                             {--check-expired : Check expired orders}
                             {--hours=24 : Check orders from last N hours}
                             {--max-inquiry-fails=3 : Max inquiry failures before force refund}
+                            {--mark-old-unused=120 : Mark unused tracks as used after N minutes}
+                            {--notify-admin : Send Telegram notifications to admin}
                             {--debug : Show detailed output}';
 
-    protected $description = 'Check and recover pending payments v2.4 - Optimized query with track filtering';
+    protected $description = 'Check and recover pending payments v2.8 - Using TelegramService like PaymentController';
+
+    private $notifyAdmin;
+    private $telegramService;
 
     public function handle()
     {
@@ -34,19 +40,25 @@ class CheckPendingPayments extends Command
         $checkExpired = $this->option('check-expired');
         $hours = (int) $this->option('hours');
         $maxInquiryFails = (int) $this->option('max-inquiry-fails');
+        $markOldUnused = (int) $this->option('mark-old-unused');
+        $this->notifyAdmin = $this->option('notify-admin');
         $debug = $this->option('debug');
+
+        // Initialize Telegram service like PaymentController
+        if ($this->notifyAdmin) {
+            try {
+                $this->telegramService = new TelegramService();
+            } catch (\Exception $e) {
+                $this->warn("⚠️  Telegram service initialization failed - notifications disabled");
+                $this->notifyAdmin = false;
+            }
+        }
 
         if ($debug) {
             $this->info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-            $this->info("🔍 Payment Recovery System v2.4");
+            $this->info("🔍 Payment Recovery System v2.8");
             $this->info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-            $this->info("Refund after: {$refundAfter} min");
-            $this->info("Check interval: {$checkInterval} min");
-            $this->info("Expire after: {$expireAfter} min");
-            $this->info("Max inquiry fails: {$maxInquiryFails}");
-            $this->info("Check hours: {$hours}");
-            $this->info("Check cancelled: " . ($checkCancelled ? 'YES' : 'NO'));
-            $this->info("Check expired: " . ($checkExpired ? 'YES' : 'NO'));
+            $this->info("Admin notifications: " . ($this->notifyAdmin ? 'ON' : 'OFF'));
         }
 
         $stats = [
@@ -59,25 +71,10 @@ class CheckPendingPayments extends Command
             'skipped' => 0,
         ];
 
-        // Determine statuses to check
-        $statusesToCheck = [0]; // Always check pending
+        $statusesToCheck = [0];
+        if ($checkCancelled) $statusesToCheck[] = 2;
+        if ($checkExpired) $statusesToCheck[] = 4;
 
-        if ($checkCancelled) {
-            $statusesToCheck[] = 2; // cancelled
-        }
-
-        if ($checkExpired) {
-            $statusesToCheck[] = 4; // refunded (double check)
-        }
-
-        if ($debug) {
-            $this->info("Checking statuses: " . implode(', ', $statusesToCheck));
-        }
-
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // 🆕 OPTIMIZED: Only fetch orders with active payment tracks
-        // This prevents checking 3000+ cancelled orders without tracks
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         $pendingOrders = Order::whereIn('status', $statusesToCheck)
             ->where('created_at', '>=', now()->subHours($hours))
             ->whereExists(function($query) {
@@ -88,7 +85,7 @@ class CheckPendingPayments extends Command
             })
             ->orderBy('created_at', 'desc')
             ->get();
-			
+
         if ($debug) {
             $this->info("\nFound {$pendingOrders->count()} orders with active tracks");
             $this->info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
@@ -97,10 +94,7 @@ class CheckPendingPayments extends Command
         foreach ($pendingOrders as $order) {
             $stats['checked']++;
 
-            // Get trackId from database or cache
-            // Try trade_no first (more reliable), then order_id as fallback
             $trackFromDb = PaymentTrack::where('trade_no', $order->trade_no)->first();
-            
             if (!$trackFromDb) {
                 $trackFromDb = PaymentTrack::where('order_id', $order->id)
                     ->where('order_id', '>', 0)
@@ -117,7 +111,6 @@ class CheckPendingPayments extends Command
                 }
                 $stats['skipped']++;
                 
-                // Expire orders without trackId if too old
                 $orderAge = now()->diffInMinutes(\Carbon\Carbon::parse($order->created_at));
                 if ($orderAge >= $expireAfter && $order->status == 0) {
                     $this->expireOrder($order);
@@ -127,7 +120,6 @@ class CheckPendingPayments extends Command
                 continue;
             }
 
-            // Rate limiting check
             $lastCheckKey = "payment_last_check_{$order->id}";
             $lastCheck = Cache::get($lastCheckKey, 0);
             
@@ -141,8 +133,6 @@ class CheckPendingPayments extends Command
             }
 
             Cache::put($lastCheckKey, time(), 3600);
-
-            // Calculate order age
             $orderAge = now()->diffInMinutes(\Carbon\Carbon::parse($order->created_at));
 
             if ($debug) {
@@ -161,6 +151,11 @@ class CheckPendingPayments extends Command
                     if ($debug) {
                         $this->error("  ✗ Payment config not found");
                     }
+                    
+                    $this->sendTelegram('🚨 ERROR: Config Missing', $order, $trackId, [
+                        'error' => 'Payment configuration not found'
+                    ]);
+                    
                     $stats['failed']++;
                     continue;
                 }
@@ -168,9 +163,6 @@ class CheckPendingPayments extends Command
                 $zibal = new ZibalPayment($paymentConfig);
                 $inquiry = $zibal->inquiry($trackId);
 
-                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-                // ✅ Track inquiry failures
-                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
                 $failCountKey = "inquiry_fail_{$order->id}";
                 
                 if ($inquiry === false) {
@@ -181,7 +173,6 @@ class CheckPendingPayments extends Command
                         $this->warn("  ⚠ Inquiry failed (attempt {$failCount}/{$maxInquiryFails})");
                     }
                     
-                    // Force refund after max failures AND sufficient age
                     if ($failCount >= $maxInquiryFails && $orderAge >= $refundAfter) {
                         if ($debug) {
                             $this->warn("  ⚠ Max inquiry fails + old order → forcing refund...");
@@ -189,10 +180,22 @@ class CheckPendingPayments extends Command
                         
                         if ($this->refundToWallet($order, $trackId, 'inquiry_failed_max_retries')) {
                             $this->info("  ✓ Force refunded to wallet");
+                            
+                            $this->sendTelegram('⚠️ WARNING: Force Refund', $order, $trackId, [
+                                'reason' => 'Max inquiry failures',
+                                'fail_count' => $failCount,
+                                'order_age' => $orderAge . ' min'
+                            ]);
+                            
                             Cache::forget($failCountKey);
                             $stats['refunded']++;
                         } else {
                             $this->error("  ✗ Force refund failed");
+                            
+                            $this->sendTelegram('🚨 ERROR: Refund Failed', $order, $trackId, [
+                                'error' => 'Force refund failed after max inquiry failures'
+                            ]);
+                            
                             $stats['failed']++;
                         }
                     } else {
@@ -201,9 +204,7 @@ class CheckPendingPayments extends Command
                     continue;
                 }
 
-                // Clear fail count on successful inquiry
                 Cache::forget($failCountKey);
-
                 $status = $inquiry['status'] ?? null;
 
                 if ($debug) {
@@ -213,23 +214,18 @@ class CheckPendingPayments extends Command
                     }
                 }
 
-                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-                // Status 1 or 2 = successful payment at Zibal
-                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
                 if (in_array($status, [1, 2])) {
                     if ($debug) {
                         $this->info("  💰 Payment successful at Zibal!");
                     }
 
                     if ($order->status != 3) {
-                        // Try to verify and complete order
                         $verifyResult = $this->attemptVerify($order, $trackId, $zibal);
 
                         if ($verifyResult) {
                             $this->info("  ✓✓ Verified and order completed!");
                             $stats['verified']++;
                         } else {
-                            // Verify failed, refund to wallet if old enough
                             if ($orderAge >= $refundAfter) {
                                 if ($debug) {
                                     $this->warn("  ⚠ Verify failed → refunding to wallet...");
@@ -237,9 +233,22 @@ class CheckPendingPayments extends Command
 
                                 if ($this->refundToWallet($order, $trackId, 'verify_failed')) {
                                     $this->info("  ✓ Refunded to wallet");
+                                    
+                                    $this->sendTelegram('⚠️ WARNING: Verify Failed', $order, $trackId, [
+                                        'reason' => 'Payment successful at Zibal but verify failed',
+                                        'zibal_status' => $status,
+                                        'order_age' => $orderAge . ' min',
+                                        'action' => 'پول به کیف پول برگشت'
+                                    ]);
+                                    
                                     $stats['refunded']++;
                                 } else {
                                     $this->error("  ✗ Refund failed");
+                                    
+                                    $this->sendTelegram('🚨 ERROR: Critical', $order, $trackId, [
+                                        'error' => 'Payment successful but verify and refund both failed'
+                                    ]);
+                                    
                                     $stats['failed']++;
                                 }
                             } else {
@@ -255,141 +264,138 @@ class CheckPendingPayments extends Command
                         }
                     }
                 } 
-                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-                // Status -1 = Payment not initiated/cancelled before gateway
-                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
                 else if ($status === -1) {
                     if ($debug) {
                         $this->line("  🚫 Payment not initiated (status: -1)");
                     }
 
-                    if ($checkCancelled && $order->status == 0) {
-                        try {
-                            $order->status = 2; // cancelled (no money charged)
-                            $order->save();
-                            
+                    if ($orderAge >= $markOldUnused) {
+                        $track = PaymentTrack::where('trade_no', $order->trade_no)->first();
+                        if ($track && !$track->is_used) {
+                            $track->markAsUsed();
                             if ($debug) {
-                                $this->info("  ✓ Order marked as cancelled");
+                                $this->line("  ✓ Track marked as used (old + not initiated)");
                             }
-                            
-                            // Mark track as used to prevent future checks
-                            $track = PaymentTrack::where('trade_no', $order->trade_no)->first();
-                            if ($track && !$track->is_used) {
-                                $track->markAsUsed();
-                                if ($debug) {
-                                    $this->line("  ✓ Track marked as used");
-                                }
-                            }
-                            
-                            $stats['cancelled']++;
-                        } catch (\Exception $e) {
-                            $this->error("  ✗ Failed to mark as cancelled: " . $e->getMessage());
-                            $stats['failed']++;
                         }
-                    } else {
-                        $stats['skipped']++;
-                    }
-                } 
-                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-                // 🆕 Status 3 = Cancelled by user at gateway
-                // CRITICAL: No money was charged, so NO REFUND needed
-                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-                else if ($status === 3) {
-                    if ($debug) {
-                        $this->line("  🚫 Payment cancelled by user at gateway (status: 3)");
-                    }
 
-                    // Only mark as cancelled - NO WALLET REFUND
-                    if ($order->status == 0) {
-                        try {
-                            $order->status = 2; // cancelled (no money charged)
-                            $order->save();
-                            
-                            if ($debug) {
-                                $this->info("  ✓ Order marked as cancelled (no refund needed)");
-                            }
-                            
-                            // Mark track as used to prevent future checks
-                            $track = PaymentTrack::where('trade_no', $order->trade_no)->first();
-                            if ($track && !$track->is_used) {
-                                $track->markAsUsed();
+                        if ($checkCancelled && $order->status == 0) {
+                            try {
+                                $order->status = 2;
+                                $order->save();
+                                
                                 if ($debug) {
-                                    $this->line("  ✓ Track marked as used");
+                                    $this->info("  ✓ Order marked as cancelled");
                                 }
+                                
+                                $stats['cancelled']++;
+                            } catch (\Exception $e) {
+                                $this->error("  ✗ Failed to mark as cancelled: " . $e->getMessage());
+                                $stats['failed']++;
                             }
-                            
-                            $stats['cancelled']++;
-                        } catch (\Exception $e) {
-                            $this->error("  ✗ Failed to cancel: " . $e->getMessage());
-                            $stats['failed']++;
+                        } else {
+                            $stats['skipped']++;
                         }
                     } else {
                         if ($debug) {
-                            $this->line("  ⏭ Already processed (status={$order->status})");
+                            $remaining = $markOldUnused - $orderAge;
+                            $this->line("  ⏳ Waiting {$remaining} min before marking as used");
                         }
                         $stats['skipped']++;
                     }
                 } 
-                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-                // 🆕 Status 4 = Payment failed/returned
-                // CRITICAL: Money was not successfully charged, NO REFUND
-                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-                else if ($status === 4) {
+                else if ($status === 3) {
                     if ($debug) {
-                        $this->line("  💳 Payment failed/returned at gateway (status: 4)");
+                        $this->line("  🚫 Cancelled by user at gateway (status: 3)");
                     }
 
-                    // Mark as cancelled - NO WALLET REFUND
-                    if ($order->status == 0) {
-                        try {
-                            $order->status = 2; // cancelled (payment failed)
-                            $order->save();
-                            
+                    if ($orderAge >= $markOldUnused) {
+                        $track = PaymentTrack::where('trade_no', $order->trade_no)->first();
+                        if ($track && !$track->is_used) {
+                            $track->markAsUsed();
                             if ($debug) {
-                                $this->info("  ✓ Order marked as cancelled (payment failed)");
+                                $this->line("  ✓ Track marked as used (old + cancelled)");
                             }
-                            
-                            // Mark track as used to prevent future checks
-                            $track = PaymentTrack::where('trade_no', $order->trade_no)->first();
-                            if ($track && !$track->is_used) {
-                                $track->markAsUsed();
+                        }
+
+                        if ($order->status == 0) {
+                            try {
+                                $order->status = 2;
+                                $order->save();
+                                
                                 if ($debug) {
-                                    $this->line("  ✓ Track marked as used");
+                                    $this->info("  ✓ Order marked as cancelled");
                                 }
+                                
+                                $stats['cancelled']++;
+                            } catch (\Exception $e) {
+                                $this->error("  ✗ Failed to cancel: " . $e->getMessage());
+                                $stats['failed']++;
                             }
-                            
-                            $stats['cancelled']++;
-                        } catch (\Exception $e) {
-                            $this->error("  ✗ Failed to cancel: " . $e->getMessage());
-                            $stats['failed']++;
+                        } else {
+                            $stats['skipped']++;
                         }
                     } else {
+                        if ($debug) {
+                            $remaining = $markOldUnused - $orderAge;
+                            $this->line("  ⏳ Waiting {$remaining} min before marking as used");
+                        }
+                        $stats['skipped']++;
+                    }
+                } 
+                else if ($status === 4) {
+                    if ($debug) {
+                        $this->line("  💳 Payment failed/returned (status: 4)");
+                    }
+
+                    if ($orderAge >= $markOldUnused) {
+                        $track = PaymentTrack::where('trade_no', $order->trade_no)->first();
+                        if ($track && !$track->is_used) {
+                            $track->markAsUsed();
+                            if ($debug) {
+                                $this->line("  ✓ Track marked as used (old + failed)");
+                            }
+                        }
+
+                        if ($order->status == 0) {
+                            try {
+                                $order->status = 2;
+                                $order->save();
+                                
+                                if ($debug) {
+                                    $this->info("  ✓ Order marked as cancelled");
+                                }
+                                
+                                $stats['cancelled']++;
+                            } catch (\Exception $e) {
+                                $this->error("  ✗ Failed to cancel: " . $e->getMessage());
+                                $stats['failed']++;
+                            }
+                        } else {
+                            $stats['skipped']++;
+                        }
+                    } else {
+                        if ($debug) {
+                            $remaining = $markOldUnused - $orderAge;
+                            $this->line("  ⏳ Waiting {$remaining} min before marking as used");
+                        }
                         $stats['skipped']++;
                     }
                 }
-                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-                // Status 0 = Still pending at Zibal
-                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
                 else if ($status === 0) {
                     if ($debug) {
                         $this->line("  ⏳ Payment still pending at Zibal (status: 0)");
                     }
 
-                    // Expire old pending orders
                     if ($orderAge >= $expireAfter && $order->status == 0) {
                         $this->expireOrder($order);
                         $stats['expired']++;
                     }
                 } 
-                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-                // Unknown status - only refund if payment was successful
-                // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
                 else {
                     if ($debug) {
                         $this->warn("  ⚠ Unknown Zibal status: {$status}");
                     }
                     
-                    // Only refund if order is old enough AND we can't determine status
                     if ($orderAge >= $refundAfter) {
                         if ($debug) {
                             $this->warn("  ⚠ Unknown status + old order → forcing refund...");
@@ -397,9 +403,23 @@ class CheckPendingPayments extends Command
                         
                         if ($this->refundToWallet($order, $trackId, 'unknown_status')) {
                             $this->info("  ✓ Force refunded to wallet");
+                            
+                            $this->sendTelegram('⚠️ WARNING: Unknown Status', $order, $trackId, [
+                                'reason' => 'Unknown Zibal status',
+                                'zibal_status' => $status,
+                                'order_age' => $orderAge . ' min',
+                                'action' => 'پول به کیف پول برگشت'
+                            ]);
+                            
                             $stats['refunded']++;
                         } else {
                             $this->error("  ✗ Force refund failed");
+                            
+                            $this->sendTelegram('🚨 ERROR: Unknown Status', $order, $trackId, [
+                                'error' => 'Unknown status and refund failed',
+                                'zibal_status' => $status
+                            ]);
+                            
                             $stats['failed']++;
                         }
                     }
@@ -409,7 +429,7 @@ class CheckPendingPayments extends Command
                 Log::channel('payment')->error('Payment recovery error', [
                     'order_id' => $order->id,
                     'trade_no' => $order->trade_no,
-                    'track_id' => $trackId,
+                    'track_id' => $trackId ?? null,
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString(),
                 ]);
@@ -417,6 +437,12 @@ class CheckPendingPayments extends Command
                 if ($debug) {
                     $this->error("  ✗ Exception: " . $e->getMessage());
                 }
+
+                $this->sendTelegram('🚨 ERROR: Exception', $order, $trackId ?? 'N/A', [
+                    'error' => $e->getMessage(),
+                    'file' => basename($e->getFile()),
+                    'line' => $e->getLine()
+                ]);
 
                 $stats['failed']++;
             }
@@ -435,34 +461,105 @@ class CheckPendingPayments extends Command
             $this->info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         }
 
+        if ($this->notifyAdmin && ($stats['failed'] > 0 || $stats['refunded'] > 0)) {
+            $this->sendSummary($stats);
+        }
+
         Log::channel('payment')->info('Payment recovery completed', $stats);
 
         return 0;
     }
 
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // Telegram Methods - Using TelegramService like PaymentController
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    private function sendTelegram(string $title, Order $order, string $trackId, array $details)
+    {
+        if (!$this->notifyAdmin || !$this->telegramService) {
+            return;
+        }
+
+        try {
+            $user = User::find($order->user_id);
+            $email = $user ? $user->email : 'Unknown';
+
+            $message = "{$title}\n";
+            $message .= "━━━━━━━━━━━━━━━━━━━━━━\n";
+            $message .= "📋 Order: {$order->trade_no}\n";
+            $message .= "🆔 Track: {$trackId}\n";
+            $message .= "👤 User: {$email}\n";
+            $message .= "💰 Amount: " . number_format($order->total_amount) . " تومان\n";
+            $message .= "⏰ Age: " . now()->diffInMinutes($order->created_at) . " دقیقه\n";
+            
+            if (!empty($details)) {
+                $message .= "━━━━━━━━━━━━━━━━━━━━━━\n";
+                foreach ($details as $key => $value) {
+                    $message .= "• " . ucfirst(str_replace('_', ' ', $key)) . ": {$value}\n";
+                }
+            }
+            
+            $message .= "━━━━━━━━━━━━━━━━━━━━━━\n";
+            $message .= "🕐 " . now()->format('Y-m-d H:i:s');
+
+            // Using TelegramService like PaymentController
+            $this->telegramService->sendMessageWithAdmin($message);
+            
+        } catch (\Exception $e) {
+            Log::channel('payment')->error('Telegram notification failed', [
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    private function sendSummary(array $stats)
+    {
+        if (!$this->notifyAdmin || !$this->telegramService) {
+            return;
+        }
+
+        try {
+            $message = "📊 Payment Recovery Summary\n";
+            $message .= "━━━━━━━━━━━━━━━━━━━━━━\n";
+            $message .= "✅ Verified: {$stats['verified']}\n";
+            $message .= "💰 Refunded: {$stats['refunded']}\n";
+            $message .= "❌ Failed: {$stats['failed']}\n";
+            $message .= "🚫 Cancelled: {$stats['cancelled']}\n";
+            $message .= "⏰ Expired: {$stats['expired']}\n";
+            $message .= "━━━━━━━━━━━━━━━━━━━━━━\n";
+            $message .= "📋 Total: {$stats['checked']}\n";
+            $message .= "🕐 " . now()->format('Y-m-d H:i:s');
+
+            // Using TelegramService like PaymentController
+            $this->telegramService->sendMessageWithAdmin($message);
+            
+        } catch (\Exception $e) {
+            Log::channel('payment')->error('Telegram summary failed', [
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // Core Methods - Following PaymentController Pattern
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
     private function attemptVerify(Order $order, string $trackId, ZibalPayment $zibal): bool
     {
         try {
-            $params = [
-                'trackId' => $trackId,
-                'orderId' => $order->trade_no,
-                'success' => 1,
-            ];
+            $verifyResult = $zibal->verify($trackId);
 
-            $result = $zibal->notify($params);
-
-            if ($result && isset($result['trade_no'])) {
-                // Update order manually since handleOrder might skip cancelled orders
+            if ($verifyResult) {
                 if ($order->status !== 3) {
                     $order->status = 3;
                     $order->paid_at = time();
                     $order->updated_at = time();
                     $order->save();
                     
-                    Log::channel('payment')->info('✓ Order updated in recovery', [
+                    Log::channel('payment')->info('✓ Order verified in recovery', [
                         'order_id' => $order->id,
+                        'trade_no' => $order->trade_no,
                         'track_id' => $trackId,
-                        'status' => 3,
                     ]);
                 }
                 
@@ -472,7 +569,6 @@ class CheckPendingPayments extends Command
             Log::channel('payment')->warning('Verify returned false in recovery', [
                 'order_id' => $order->id,
                 'track_id' => $trackId,
-                'result' => $result,
             ]);
 
             return false;
@@ -503,11 +599,9 @@ class CheckPendingPayments extends Command
             $user->balance += $order->total_amount;
             $user->save();
 
-            // Set status = 4 (refunded to wallet)
             $order->status = 4;
             $order->save();
 
-            // Mark trackId as used
             $track = PaymentTrack::where('track_id', $trackId)->first();
             if ($track && !$track->is_used) {
                 $track->markAsUsed();
@@ -526,7 +620,6 @@ class CheckPendingPayments extends Command
                 'old_balance' => $oldBalance,
                 'new_balance' => $user->balance,
                 'reason' => $reason,
-                'status_set' => 4,
             ]);
 
             return true;
@@ -538,7 +631,6 @@ class CheckPendingPayments extends Command
                 'order_id' => $order->id,
                 'track_id' => $trackId,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
 
             return false;
@@ -548,8 +640,13 @@ class CheckPendingPayments extends Command
     private function expireOrder(Order $order): bool
     {
         try {
-            $order->status = 2; // cancelled (no refund needed - payment never succeeded)
+            $order->status = 2;
             $order->save();
+
+            $track = PaymentTrack::where('trade_no', $order->trade_no)->first();
+            if ($track && !$track->is_used) {
+                $track->markAsUsed();
+            }
 
             cache()->forget("zibal_track_{$order->trade_no}");
 
@@ -579,7 +676,6 @@ class CheckPendingPayments extends Command
         }
 
         try {
-            // Try multiple payment method names
             $paymentNames = ['ZibalPayment', 'ZibalPay', 'Zibal'];
             
             foreach ($paymentNames as $name) {

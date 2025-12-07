@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\TelegramService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class TelegramController extends Controller
 {
@@ -15,7 +16,6 @@ class TelegramController extends Controller
 
     public function __construct(Request $request)
     {
-        // لاگ برای شروع کانستراکتور
         Log::info('TelegramController instantiated.');
 
         if (!app()->runningInConsole()) {
@@ -33,11 +33,16 @@ class TelegramController extends Controller
     {
         Log::info('Webhook received with payload.', ['payload' => $request->input()]);
 
-        $this->formatMessage($request->input());
-        $this->formatChatJoinRequest($request->input());
-        $this->handle();
+        try {
+            $this->formatMessage($request->input());
+            $this->formatChatJoinRequest($request->input());
+            $this->handle();
+            Log::info('Webhook handled successfully.');
+        } catch (\Exception $e) {
+            Log::error($e->getMessage(), ['exception' => $e]);
+        }
 
-        Log::info('Webhook handled successfully.');
+        return response()->json(['ok' => true], 200);
     }
 
     public function handle()
@@ -60,6 +65,8 @@ class TelegramController extends Controller
         }
 
         try {
+            $commandHandled = false;
+            
             foreach (glob(base_path('app/Plugins/Telegram/Commands') . '/*.php') as $file) {
                 $command = basename($file, '.php');
                 $class = '\\App\\Plugins\\Telegram\\Commands\\' . $command;
@@ -71,22 +78,44 @@ class TelegramController extends Controller
                 if ($msg->message_type === 'message') {
                     if (!isset($instance->command)) continue;
                     if ($msg->command !== $instance->command) continue;
-                    $instance->handle($msg);
-                    Log::info('Command handled.', ['command' => $msg->command]);
-                    return;
+                    
+                    try {
+                        $instance->handle($msg);
+                        Log::info('Command handled.', ['command' => $msg->command]);
+                    } catch (HttpException $e) {
+                        // خطاهای abort() را بگیر و به کاربر بفرست
+                        Log::error('Command error: ' . $e->getMessage());
+                        $this->telegramService->sendMessage($msg->chat_id, $e->getMessage());
+                    }
+                    
+                    $commandHandled = true;
+                    break;
                 }
 
                 if ($msg->message_type === 'reply_message') {
                     if (!isset($instance->regex)) continue;
                     if (!preg_match($instance->regex, $msg->reply_text, $match)) continue;
-                    $instance->handle($msg, $match);
-                    Log::info('Reply message handled.', ['command' => $msg->command]);
-                    return;
+                    
+                    try {
+                        $instance->handle($msg, $match);
+                        Log::info('Reply message handled.', ['command' => $msg->command]);
+                    } catch (HttpException $e) {
+                        // خطاهای abort() را بگیر و به کاربر بفرست
+                        Log::error('Reply command error: ' . $e->getMessage());
+                        $this->telegramService->sendMessage($msg->chat_id, $e->getMessage());
+                    }
+                    
+                    $commandHandled = true;
+                    break;
                 }
             }
+            
+            if (!$commandHandled) {
+                Log::warning('Command not handled.', ['command' => $msg->command]);
+            }
         } catch (\Exception $e) {
-            Log::error('Error while handling command.', ['exception' => $e->getMessage()]);
-            $this->telegramService->sendMessage($msg->chat_id, $e->getMessage());
+            Log::error($e->getMessage(), ['exception' => $e]);
+            $this->telegramService->sendMessage($msg->chat_id, 'خطایی رخ داد. لطفا دوباره تلاش کنید.');
         }
     }
 

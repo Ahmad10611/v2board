@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services;
 
 use App\Jobs\SendTelegramJob;
@@ -6,7 +7,8 @@ use App\Models\User;
 use \Curl\Curl;
 use Illuminate\Mail\Markdown;
 
-class TelegramService {
+class TelegramService
+{
     protected $api;
 
     public function __construct($token = '')
@@ -23,6 +25,24 @@ class TelegramService {
             'chat_id' => $chatId,
             'text' => $text,
             'parse_mode' => $parseMode
+        ]);
+    }
+
+    public function sendMessageWithKeyboard(int $chatId, string $text, array $keyboard, string $parseMode = '')
+    {
+        if ($parseMode === 'markdown') {
+            $text = str_replace('_', '\_', $text);
+        }
+        
+        $this->request('sendMessage', [
+            'chat_id' => $chatId,
+            'text' => $text,
+            'parse_mode' => $parseMode,
+            'reply_markup' => json_encode([
+                'keyboard' => $keyboard,
+                'resize_keyboard' => true,
+                'one_time_keyboard' => false
+            ])
         ]);
     }
 
@@ -59,36 +79,28 @@ class TelegramService {
     public function discoverCommands(string $directory): array
     {
         $commands = [];
-
         foreach (glob($directory . '/*.php') as $file) {
             $className = 'App\\Plugins\\Telegram\\Commands\\' . basename($file, '.php');
-
             if (!class_exists($className)) {
                 require_once $file;
             }
-
             if (!class_exists($className)) {
                 continue;
             }
-
             try {
                 $ref = new \ReflectionClass($className);
-
                 if (
                     $ref->hasProperty('command') &&
                     $ref->hasProperty('description')
                 ) {
                     $commandProp = $ref->getProperty('command');
                     $descProp = $ref->getProperty('description');
-
                     $command = $commandProp->isStatic()
                         ? $commandProp->getValue()
                         : $ref->newInstanceWithoutConstructor()->command;
-
                     $description = $descProp->isStatic()
                         ? $descProp->getValue()
                         : $ref->newInstanceWithoutConstructor()->description;
-
                     $commands[] = [
                         'command' => $command,
                         'description' => $description,
@@ -114,9 +126,9 @@ class TelegramService {
         $curl->get($this->api . $method . '?' . http_build_query($params));
         $response = $curl->response;
         $curl->close();
-        if (!isset($response->ok)) abort(500, '请求失败');
+        if (!isset($response->ok)) abort(500, 'درخواست ناموفق بود');
         if (!$response->ok) {
-            abort(500, '来自TG的错误：' . $response->description);
+            abort(500, 'خطا از تلگرام: ' . $response->description);
         }
         return $response;
     }

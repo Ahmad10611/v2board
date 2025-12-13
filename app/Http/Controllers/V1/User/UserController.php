@@ -406,7 +406,8 @@ class UserController extends Controller
                 'transfer_enable',
                 'device_limit',
                 'email',
-                'uuid'
+                'uuid',
+                'auto_renewal'  // ✅ این خط اضافه شده
             ])
             ->first();
         if (!$user) {
@@ -418,7 +419,7 @@ class UserController extends Controller
                 abort(500, __('Subscription plan does not exist'));
             }
         }
-
+    
         // Cache key برای devices این user
         $cacheKey = 'USER_DEVICES_PROCESSED_' . $request->user['id'];
     
@@ -457,7 +458,7 @@ class UserController extends Controller
     
         $user['alive_ip'] = $deviceData['alive_ip'];
         $user['ips'] = $deviceData['ips'];
-
+    
         $user['subscribe_url'] = Helper::getSubscribeUrl($user['token']);
     
         $userService = new UserService();
@@ -468,7 +469,6 @@ class UserController extends Controller
             'data' => $user
         ]);
     }
-
     public function unbindTelegram(Request $request)
     {
         $user = User::find($request->user['id']);
